@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GEST PREV - Plateforme modulaire de gestion prévisionnelle</title>
+    <link rel="stylesheet" href="css/modules.css">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <!-- Header -->
+    <header class="main-header">
+        <div class="header-content">
+            <div class="logo">
+                <div class="logo-icon">
+                    <div class="icon-part icon-part-1"></div>
+                    <div class="icon-part icon-part-2"></div>
+                </div>
+                <div class="logo-text">
+                    <h1>GEST PREV</h1>
+                    <p>Plateforme modulaire de gestion prévisionnelle</p>
+                </div>
+            </div>
+            <nav class="main-nav">
+                <div class="module-buttons">
+                    <button class="module-btn active" data-module="rh">
+                        <i class="fas fa-users"></i>
+                        <span>RH</span>
+                    </button>
+                    <button class="module-btn" data-module="financier">
+                        <i class="fas fa-euro-sign"></i>
+                        <span>Financier</span>
+                        <span class="coming-soon">Bientôt</span>
+                    </button>
+                    <button class="module-btn" data-module="infrastructure">
+                        <i class="fas fa-building"></i>
+                        <span>Infrastructure</span>
+                        <span class="coming-soon">Bientôt</span>
+                    </button>
+                    <button class="module-btn" data-module="commercial">
+                        <i class="fas fa-chart-line"></i>
+                        <span>Commercial</span>
+                        <span class="coming-soon">Bientôt</span>
+                    </button>
+                    <button class="module-btn" data-module="environnement">
+                        <i class="fas fa-leaf"></i>
+                        <span>Environnement</span>
+                        <span class="coming-soon">Bientôt</span>
+                    </button>
+                    <button class="module-btn" data-module="operationnel">
+                        <i class="fas fa-cogs"></i>
+                        <span>Opérationnel</span>
+                        <span class="coming-soon">Bientôt</span>
+                    </button>
+                </div>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Module Banner -->
+    <div class="module-banner">
+        <div class="banner-content">
+            <h2>Module RH - Gestion prévisionnelle des ressources humaines</h2>
+            <p>Centralisez et optimisez votre gestion RH prévisionnelle</p>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Module RH -->
+        <div id="rh-module" class="module-content active">
+            <div class="module-tabs">
+                <button class="tab-btn" data-tab="rh-presentation">Présentation</button>
+                <button class="tab-btn active" data-tab="rh-services">Services</button>
+                <button class="tab-btn" data-tab="rh-employes">Employés</button>
+                <button class="tab-btn" data-tab="rh-planning">Planning</button>
+                <button class="tab-btn" data-tab="rh-simulation">Simulation</button>
+                <button class="tab-btn" data-tab="rh-dashboard">Tableau de bord</button>
+            </div>
+
+            <!-- Section Services RH -->
+            <section id="rh-services" class="module-section active">
+                <div class="section-header">
+                    <h3><i class="fas fa-cogs"></i> Configuration des services</h3>
+                    <p>Définissez vos services avec catégories et horaires saisonniers</p>
+                </div>
+                <div class="services-container">
+                    <div class="services-header">
+                        <h3>Services configurés</h3>
+                        <button type="button" id="show-service-form" class="btn btn-primary">
+                            <i class="fas fa-plus"></i> Ajouter un service
+                        </button>
+                    </div>
+                    <form id="service-form" class="service-form" style="display: none;">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="service-name">Nom du service</label>
+                                <input type="text" id="service-name" name="service-name" placeholder="Ex: Réception, Restaurant..." required>
+                            </div>
+                            <div class="form-group">
+                                <label for="service-category">Catégorie</label>
+                                <select id="service-category" name="service-category" required>
+                                    <option value="">Sélectionner...</option>
+                                    <option value="hotellerie">🏨 Hôtellerie</option>
+                                    <option value="restauration">🍽️ Restauration</option>
+                                    <option value="loisirs">🎯 Loisirs</option>
+                                    <option value="technique">🔧 Technique</option>
+                                    <option value="administratif">📋 Administratif</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <!-- Configuration horaires jour par jour -->
+                        <div class="daily-hours-config">
+                            <h4><i class="fas fa-calendar-week"></i> Horaires par jour</h4>
+                            <div class="days-hours-container">
+                                <!-- Lundi -->
+                                <div class="day-hours-card">
+                                    <h5>Lundi</h5>
+                                    <div class="day-hours-content">
+                                        <div class="season-hours-day">
+                                            <div class="season-header">
+                                                <label>Haute saison</label>
+                                                <div class="season-options">
+                                                    <label class="checkbox-label">
+                                                        <input type="checkbox" class="ferme-checkbox" name="lundi-haute-ferme">
+                                                        <span>Fermé</span>
+                                                    </label>
+                                                    <label class="checkbox-label">
+                                                        <input type="checkbox" class="meme-basse-checkbox" name="lundi-haute-meme-basse">
+                                                        <span>Même horaires que basse saison</span>
+                                                    </label>
+                                                </div>
+                                            </div>
+                                            <div class="time-inputs">
+                                                <input type="time" name="lundi-haute-ouverture" placeholder="08:00">
+                                                <span>à</span>
+                                                <input type="time" name="lundi-haute-fermeture" placeholder="18:00">
+                                            </div>
+                                        </div>
+                                        <div class="season-hours-day">
+                                            <div class="season-header">
+                                                <label>Basse saison</label>
+                                                <div class="season-options">
+                                                    <label class="checkbox-label">
+                                                        <input type="checkbox" class="ferme-checkbox" name="lundi-basse-ferme">
+                                                        <span>Fermé</span>
+                                                    </label>
+                                                </div>
+                                            </div>
+                                            <div class="time-inputs">
+                                                <input type="time" name="lundi-basse-ouverture" placeholder="09:00">
+                                                <span>à</span>
+                                                <input type="time" name="lundi-basse-fermeture" placeholder="17:00">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Mardi -->
+                                <div class="day-hours-card">
+                                    <h5>Mardi</h5>
+                                    <div class="day-hours-content">
+                                        <div class="season-hours-day">
+                                            <div class="season-header">
+                                                <label>Haute saison</label>
+                                                <div class="season-options">
+                                                    <label class="checkbox-label">
+                                                        <input type="checkbox" class="ferme-checkbox" name="mardi-haute-ferme">
+                                                        <span>Fermé</span>
+                                                    </label>
+                                                    <label class="checkbox-label">
+                                                        <input type="checkbox" class="meme-basse-checkbox" name="mardi-haute-meme-basse">
+                                                        <span>Même horaires que basse saison</span>
+                                                    </label>
+                                                </div>
+                                            </div>
+                                            <div class="time-inputs">
+                                                <input type="time" name="mardi-haute-ouverture" placeholder="08:00">
+                                                <span>à</span>
+                                                <input type="time" name="mardi-haute-fermeture" placeholder="18:00">
+                                            </div>
+                                        </div>
+                                        <div class="season-hours-day">
+                                            <div class="season-header">
+                                                <label>Basse saison</label>
+                                                <div class="season-options">
+                                                    <label class="checkbox-label">
+                                                        <input type="checkbox" class="ferme-checkbox" name="mardi-basse-ferme">
+                                                        <span>Fermé</span>
+                                                    </label>
+                                                </div>
+                                            </div>
+                                            <div class="time-inputs">
+                                                <input type="time" name="mardi-basse-ouverture" placeholder="09:00">
+                                                <span>à</span>
+                                                <input type="time" name="mardi-basse-fermeture" placeholder="17:00">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Mercredi -->
+                                <div class="day-hours-card">
+                                    <h5>Mercredi</h5>
+                                    <div class="day-hours-content">
+                                        <div class="season-hours-day">
+                                            <div class="season-header">
+                                                <label>Haute saison</label>
+                                                <div class="season-options">
+                                                    <label class="checkbox-label">
+                                                        <input type="checkbox" class="ferme-checkbox" name="mercredi-haute-ferme">
+                                                        <span>Fermé</span>
+                                                    </label>
+                                                    <label class="checkbox-label">
+                                                        <input type="checkbox" class="meme-basse-checkbox" name="mercredi-haute-meme-basse">
+                                                        <span>Même horaires que basse saison</span>
+                                                    </label>
+                                                </div>
+                                            </div>
+                                            <div class="time-inputs">
+                                                <input type="time" name="mercredi-haute-ouverture" placeholder="08:00">
+                                                <span>à</span>
+                                                <input type="time" name="mercredi-haute-fermeture" placeholder="18:00">
+                                            </div>
+                                        </div>
+                                        <div class="season-hours-day">
+                                            <div class="season-header">
+                                                <label>Basse saison</label>
+                                                <div class="season-options">
+                                                    <label class="checkbox-label">
+                                                        <input type="checkbox" class="ferme-checkbox" name="mercredi-basse-ferme">
+                                                        <span>Fermé</span>
+                                                    </label>
+                                                </div>
+                                            </div>
+                                            <div class="time-inputs">
+                                                <input type="time" name="mercredi-basse-ouverture" placeholder="09:00">
+                                                <span>à</span>
+                                                <input type="time" name="mercredi-basse-fermeture" placeholder="17:00">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Jeudi -->
+                                <div class="day-hours-card">
+                                    <h5>Jeudi</h5>
+                                    <div class="day-hours-content">
+                                        <div class="season-hours-day">
+                                            <div class="season-header">
+                                                <label>Haute saison</label>
+                                                <div class="season-options">
+                                                    <label class="checkbox-label">
+                                                        <input type="checkbox" class="ferme-checkbox" name="jeudi-haute-ferme">
+                                                        <span>Fermé</span>
+                                                    </label>
+                                                    <label class="checkbox-label">
+                                                        <input type="checkbox" class="meme-basse-checkbox" name="jeudi-haute-meme-basse">
+                                                        <span>Même horaires que basse saison</span>
+                                                    </label>
+                                                </div>
+                                            </div>
+                                            <div class="time-inputs">
+                                                <input type="time" name="jeudi-haute-ouverture" placeholder="08:00">
+                                                <span>à</span>
+                                                <input type="time" name="jeudi-haute-fermeture" placeholder="18:00">
+                                            </div>
+                                        </div>
+                                        <div class="season-hours-day">
+                                            <div class="season-header">
+                                                <label>Basse saison</label>
+                                                <div class="season-options">
+                                                    <label class="checkbox-label">
+                                                        <input type="checkbox" class="ferme-checkbox" name="jeudi-basse-ferme">
+                                                        <span>Fermé</span>
+                                                    </label>
+                                                </div>
+                                            </div>
+                                            <div class="time-inputs">
+                                                <input type="time" name="jeudi-basse-ouverture" placeholder="09:00">
+                                                <span>à</span>
+                                                <input type="time" name="jeudi-basse-fermeture" placeholder="17:00">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Vendredi -->
+                                <div class="day-hours-card">
+                                    <h5>Vendredi</h5>
+                                    <div class="day-hours-content">
+                                        <div class="season-hours-day">
+                                            <div class="season-header">
+                                                <label>Haute saison</label>
+                                                <div class="season-options">
+                                                    <label class="checkbox-label">
+                                                        <input type="checkbox" class="ferme-checkbox" name="vendredi-haute-ferme">
+                                                        <span>Fermé</span>
+                                                    </label>
+                                                    <label class="checkbox-label">
+                                                        <input type="checkbox" class="meme-basse-checkbox" name="vendredi-haute-meme-basse">
+                                                        <span>Même horaires que basse saison</span>
+                                                    </label>
+                                                </div>
+                                            </div>
+                                            <div class="time-inputs">
+                                                <input type="time" name="vendredi-haute-ouverture" placeholder="08:00">
+                                                <span>à</span>
+                                                <input type="time" name="vendredi-haute-fermeture" placeholder="18:00">
+                                            </div>
+                                        </div>
+                                        <div class="season-hours-day">
+                                            <div class="season-header">
+                                                <label>Basse saison</label>
+                                                <div class="season-options">
+                                                    <label class="checkbox-label">
+                                                        <input type="checkbox" class="ferme-checkbox" name="vendredi-basse-ferme">
+                                                        <span>Fermé</span>
+                                                    </label>
+                                                </div>
+                                            </div>
+                                            <div class="time-inputs">
+                                                <input type="time" name="vendredi-basse-ouverture" placeholder="09:00">
+                                                <span>à</span>
+                                                <input type="time" name="vendredi-basse-fermeture" placeholder="17:00">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Samedi -->
+                                <div class="day-hours-card">
+                                    <h5>Samedi</h5>
+                                    <div class="day-hours-content">
+                                        <div class="season-hours-day">
+                                            <div class="season-header">
+                                                <label>Haute saison</label>
+                                                <div class="season-options">
+                                                    <label class="checkbox-label">
+                                                        <input type="checkbox" class="ferme-checkbox" name="samedi-haute-ferme">
+                                                        <span>Fermé</span>
+                                                    </label>
+                                                    <label class="checkbox-label">
+                                                        <input type="checkbox" class="meme-basse-checkbox" name="samedi-haute-meme-basse">
+                                                        <span>Même horaires que basse saison</span>
+                                                    </label>
+                                                </div>
+                                            </div>
+                                            <div class="time-inputs">
+                                                <input type="time" name="samedi-haute-ouverture" placeholder="08:00">
+                                                <span>à</span>
+                                                <input type="time" name="samedi-haute-fermeture" placeholder="18:00">
+                                            </div>
+                                        </div>
+                                        <div class="season-hours-day">
+                                            <div class="season-header">
+                                                <label>Basse saison</label>
+                                                <div class="season-options">
+                                                    <label class="checkbox-label">
+                                                        <input type="checkbox" class="ferme-checkbox" name="samedi-basse-ferme">
+                                                        <span>Fermé</span>
+                                                    </label>
+                                                </div>
+                                            </div>
+                                            <div class="time-inputs">
+                                                <input type="time" name="samedi-basse-ouverture" placeholder="09:00">
+                                                <span>à</span>
+                                                <input type="time" name="samedi-basse-fermeture" placeholder="17:00">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Dimanche -->
+                                <div class="day-hours-card">
+                                    <h5>Dimanche</h5>
+                                    <div class="day-hours-content">
+                                        <div class="season-hours-day">
+                                            <div class="season-header">
+                                                <label>Haute saison</label>
+                                                <div class="season-options">
+                                                    <label class="checkbox-label">
+                                                        <input type="checkbox" class="ferme-checkbox" name="dimanche-haute-ferme">
+                                                        <span>Fermé</span>
+                                                    </label>
+                                                    <label class="checkbox-label">
+                                                        <input type="checkbox" class="meme-basse-checkbox" name="dimanche-haute-meme-basse">
+                                                        <span>Même horaires que basse saison</span>
+                                                    </label>
+                                                </div>
+                                            </div>
+                                            <div class="time-inputs">
+                                                <input type="time" name="dimanche-haute-ouverture" placeholder="08:00">
+                                                <span>à</span>
+                                                <input type="time" name="dimanche-haute-fermeture" placeholder="18:00">
+                                            </div>
+                                        </div>
+                                        <div class="season-hours-day">
+                                            <div class="season-header">
+                                                <label>Basse saison</label>
+                                                <div class="season-options">
+                                                    <label class="checkbox-label">
+                                                        <input type="checkbox" class="ferme-checkbox" name="dimanche-basse-ferme">
+                                                        <span>Fermé</span>
+                                                    </label>
+                                                </div>
+                                            </div>
+                                            <div class="time-inputs">
+                                                <input type="time" name="dimanche-basse-ouverture" placeholder="09:00">
+                                                <span>à</span>
+                                                <input type="time" name="dimanche-basse-fermeture" placeholder="17:00">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-actions">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-plus"></i> Ajouter le service
+                            </button>
+                            <button type="button" id="cancel-service-form" class="btn btn-secondary">
+                                <i class="fas fa-times"></i> Annuler
+                            </button>
+                        </div>
+                    </form>
+                    <div id="services-list" class="services-list">
+                        <!-- Services ajoutés apparaîtront ici -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- Section Employés RH -->
+            <section id="rh-employes" class="module-section">
+                <div class="section-header">
+                    <h3><i class="fas fa-user-friends"></i> Gestion des employés</h3>
+                    <p>Configurez vos employés et leurs attributions multi-services</p>
+                </div>
+                <div class="employes-container">
+                    <form id="employe-form" class="employe-form">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="employe-nom">Nom et prénom</label>
+                                <input type="text" id="employe-nom" name="employe-nom" placeholder="Ex: Martin Dupont..." required>
+                            </div>
+                            <div class="form-group">
+                                <label for="employe-quota">Quota hebdomadaire (h)</label>
+                                <input type="number" id="employe-quota" name="employe-quota" min="1" max="60" value="35" required>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="employe-taux">Taux horaire (€)</label>
+                                <input type="number" id="employe-taux" name="employe-taux" min="0" step="0.01" value="12.50" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="employe-categorie">Catégorie</label>
+                                <select id="employe-categorie" name="employe-categorie" required>
+                                    <option value="">Sélectionner...</option>
+                                    <option value="I-1">I-1</option>
+                                    <option value="I-2">I-2</option>
+                                    <option value="I-3">I-3</option>
+                                    <option value="II-1">II-1</option>
+                                    <option value="II-2">II-2</option>
+                                    <option value="II-3">II-3</option>
+                                    <option value="III-1">III-1</option>
+                                    <option value="III-2">III-2</option>
+                                    <option value="III-3">III-3</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="employe-echelon">Échelon</label>
+                                <select id="employe-echelon" name="employe-echelon" required>
+                                    <option value="">Sélectionner...</option>
+                                    <option value="1">1</option>
+                                    <option value="2">2</option>
+                                    <option value="3">3</option>
+                                    <option value="4">4</option>
+                                    <option value="5">5</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="employe-niveau">Niveau</label>
+                                <select id="employe-niveau" name="employe-niveau" required>
+                                    <option value="">Sélectionner...</option>
+                                    <option value="Débutant">Débutant</option>
+                                    <option value="Intermédiaire">Intermédiaire</option>
+                                    <option value="Confirmé">Confirmé</option>
+                                    <option value="Expert">Expert</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="employe-services">Services assignés</label>
+                                <select id="employe-services" name="employe-services" multiple>
+                                    <!-- Options générées dynamiquement -->
+                                </select>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-plus"></i> Ajouter l'employé
+                        </button>
+                    </form>
+                    <div id="employes-list" class="employes-list">
+                        <!-- Employés ajoutés apparaîtront ici -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- Section Planning RH -->
+            <section id="rh-planning" class="module-section">
+                <div class="section-header">
+                    <h3><i class="fas fa-calendar-alt"></i> Planning prévisionnel</h3>
+                    <p>Générez des plannings optimisés selon vos besoins</p>
+                </div>
+                <div class="planning-container">
+                    <div class="planning-controls">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="planning-service">Service</label>
+                                <select id="planning-service" name="planning-service" required>
+                                    <option value="">Sélectionner un service...</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="planning-saison">Saison</label>
+                                <select id="planning-saison" name="planning-saison" required>
+                                    <option value="">Sélectionner...</option>
+                                    <option value="haute">Haute saison</option>
+                                    <option value="basse">Basse saison</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="planning-test-quota">Test quota employé</label>
+                                <select id="planning-test-quota" name="planning-test-quota">
+                                    <option value="">Sélectionner un employé...</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="planning-coverage">Couverture minimale</label>
+                                <input type="number" id="planning-coverage" name="planning-coverage" min="1" max="10" value="2" required>
+                            </div>
+                        </div>
+                        <button type="button" id="generate-planning" class="btn btn-primary">
+                            <i class="fas fa-magic"></i> Générer le planning
+                        </button>
+                    </div>
+                    <div id="planning-results" class="planning-results">
+                        <!-- Résultats du planning apparaîtront ici -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- Section Simulation RH -->
+            <section id="rh-simulation" class="module-section">
+                <div class="section-header">
+                    <h3><i class="fas fa-chart-line"></i> Simulation RH</h3>
+                    <p>Simulez différents scénarios de gestion des ressources humaines</p>
+                </div>
+                <div class="simulation-container">
+                    <div class="simulation-controls">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="simulation-periode">Période de simulation</label>
+                                <select id="simulation-periode" name="simulation-periode" required>
+                                    <option value="">Sélectionner...</option>
+                                    <option value="1">1 mois</option>
+                                    <option value="3">3 mois</option>
+                                    <option value="6">6 mois</option>
+                                    <option value="12">12 mois</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="simulation-taux-charges">Taux de charges (%)</label>
+                                <input type="number" id="simulation-taux-charges" name="simulation-taux-charges" min="0" max="100" value="25" required>
+                            </div>
+                        </div>
+                        <button type="button" id="run-simulation" class="btn btn-primary">
+                            <i class="fas fa-play"></i> Lancer la simulation
+                        </button>
+                    </div>
+                    <div id="simulation-results" class="simulation-results">
+                        <!-- Résultats de simulation apparaîtront ici -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- Section Tableau de bord RH -->
+            <section id="rh-dashboard" class="module-section">
+                <div class="section-header">
+                    <h3><i class="fas fa-tachometer-alt"></i> Tableau de bord RH</h3>
+                    <p>Visualisez les indicateurs clés de vos ressources humaines</p>
+                </div>
+                <div class="dashboard-container">
+                    <div class="dashboard-controls">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="dashboard-mois">Mois de référence</label>
+                                <select id="dashboard-mois" name="dashboard-mois" required>
+                                    <option value="1">Janvier</option>
+                                    <option value="2">Février</option>
+                                    <option value="3">Mars</option>
+                                    <option value="4">Avril</option>
+                                    <option value="5">Mai</option>
+                                    <option value="6">Juin</option>
+                                    <option value="7">Juillet</option>
+                                    <option value="8">Août</option>
+                                    <option value="9">Septembre</option>
+                                    <option value="10">Octobre</option>
+                                    <option value="11">Novembre</option>
+                                    <option value="12">Décembre</option>
+                                </select>
+                            </div>
+                        </div>
+                        <button type="button" id="generate-dashboard" class="btn btn-primary">
+                            <i class="fas fa-chart-bar"></i> Générer le tableau de bord
+                        </button>
+                    </div>
+                    <div id="dashboard-results" class="dashboard-results">
+                        <!-- Résultats du tableau de bord apparaîtront ici -->
+                    </div>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="main-footer">
+        <div class="footer-content">
+            <p>&copy; 2024 GEST PREV - Plateforme modulaire de gestion prévisionnelle</p>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="js/modules.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html> 

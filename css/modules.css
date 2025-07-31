@@ -1,0 +1,554 @@
+/* ===== STYLES POUR L'ARCHITECTURE MODULAIRE ===== */
+
+/* Navigation des modules */
+.modules-nav {
+    margin-top: 1rem;
+}
+
+.module-selector {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.module-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 1rem 1.5rem;
+    background: var(--light-gray);
+    border: 2px solid transparent;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+    min-width: 100px;
+}
+
+.module-btn:hover {
+    background: var(--white);
+    border-color: var(--primary-color);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-hover);
+}
+
+.module-btn.active {
+    background: var(--primary-color);
+    color: var(--white);
+    border-color: var(--primary-color);
+}
+
+.module-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.module-btn i {
+    font-size: 1.5rem;
+    margin-bottom: 0.25rem;
+}
+
+.module-btn span {
+    font-size: 0.8rem;
+    font-weight: 500;
+}
+
+.coming-soon {
+    font-size: 0.7rem;
+    background: var(--secondary-color);
+    color: var(--white);
+    padding: 0.1rem 0.3rem;
+    border-radius: 4px;
+    margin-top: 0.25rem;
+}
+
+/* Contenu des modules */
+.module-content {
+    display: none;
+    animation: fadeIn 0.3s ease-in;
+}
+
+.module-content.active {
+    display: block;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.module-header {
+    text-align: center;
+    margin-bottom: 2rem;
+    padding: 2rem;
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    color: var(--white);
+    border-radius: 12px;
+}
+
+.module-header h2 {
+    margin-bottom: 0.5rem;
+    font-size: 2rem;
+}
+
+.module-header p {
+    font-size: 1.1rem;
+    opacity: 0.9;
+}
+
+/* Navigation interne des modules */
+.module-internal-nav {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    margin-bottom: 2rem;
+    padding: 1rem;
+    background: var(--white);
+    border-radius: 8px;
+    box-shadow: var(--shadow);
+    flex-wrap: wrap;
+}
+
+.internal-nav-link {
+    padding: 0.75rem 1.5rem;
+    background: var(--light-gray);
+    border-radius: 6px;
+    text-decoration: none;
+    color: var(--dark-gray);
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.internal-nav-link:hover {
+    background: var(--secondary-color);
+    color: var(--white);
+}
+
+.internal-nav-link.active {
+    background: var(--primary-color);
+    color: var(--white);
+}
+
+/* Sections des modules */
+.module-section {
+    display: none;
+    animation: slideIn 0.3s ease-out;
+}
+
+.module-section.active {
+    display: block;
+}
+
+@keyframes slideIn {
+    from { opacity: 0; transform: translateX(20px); }
+    to { opacity: 1; transform: translateX(0); }
+}
+
+/* Sections saisonnières */
+.season-hours {
+    background: var(--light-gray);
+    padding: 1.5rem;
+    border-radius: 8px;
+    margin-bottom: 1rem;
+    border-left: 4px solid var(--secondary-color);
+}
+
+.season-hours h4 {
+    margin-bottom: 1rem;
+    color: var(--primary-color);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+/* Modules à venir */
+.module-coming-soon {
+    text-align: center;
+    padding: 4rem 2rem;
+    background: var(--light-gray);
+    border-radius: 12px;
+    border: 2px dashed var(--medium-gray);
+}
+
+.module-coming-soon i {
+    font-size: 4rem;
+    color: var(--medium-gray);
+    margin-bottom: 1rem;
+}
+
+.module-coming-soon h3 {
+    color: var(--primary-color);
+    margin-bottom: 0.5rem;
+}
+
+.module-coming-soon p {
+    color: var(--medium-gray);
+    margin-bottom: 1rem;
+}
+
+.coming-soon-badge {
+    background: var(--secondary-color);
+    color: var(--white);
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    font-weight: 500;
+    font-size: 0.9rem;
+}
+
+/* Footer modulaire */
+.footer-modules {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.footer-module {
+    padding: 0.5rem 1rem;
+    background: var(--light-gray);
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 500;
+}
+
+.footer-module.active {
+    background: var(--primary-color);
+    color: var(--white);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .module-selector {
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    .module-btn {
+        width: 100%;
+        max-width: 200px;
+    }
+    
+    .module-internal-nav {
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    .internal-nav-link {
+        width: 100%;
+        text-align: center;
+    }
+    
+    .footer-modules {
+        flex-direction: column;
+        align-items: center;
+    }
+}
+
+/* Styles spécifiques pour le module RH */
+.employe-item, .service-item {
+    background: var(--white);
+    padding: 1.5rem;
+    border-radius: 8px;
+    box-shadow: var(--shadow);
+    margin-bottom: 1rem;
+    border-left: 4px solid var(--primary-color);
+}
+
+.employe-header, .service-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.employe-name, .service-name {
+    font-weight: 600;
+    color: var(--primary-color);
+    font-size: 1.1rem;
+}
+
+.employe-quota, .service-category {
+    background: var(--secondary-color);
+    color: var(--white);
+    padding: 0.25rem 0.75rem;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    font-weight: 500;
+}
+
+.employe-details, .service-details {
+    color: var(--medium-gray);
+    font-size: 0.9rem;
+    line-height: 1.5;
+}
+
+.taux-section, .services-section, .horaires-section, .jours-section {
+    margin-bottom: 0.5rem;
+}
+
+/* Planning grid */
+.planning-grid {
+    background: var(--white);
+    border-radius: 8px;
+    box-shadow: var(--shadow);
+    overflow: hidden;
+}
+
+.planning-header {
+    background: var(--primary-color);
+    color: var(--white);
+    padding: 1.5rem;
+}
+
+.planning-info {
+    display: flex;
+    gap: 2rem;
+    margin-top: 1rem;
+    flex-wrap: wrap;
+}
+
+.planning-table table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.planning-table th,
+.planning-table td {
+    padding: 1rem;
+    text-align: left;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.planning-table th {
+    background: var(--light-gray);
+    font-weight: 600;
+    color: var(--primary-color);
+}
+
+.employe-assignment {
+    width: 100%;
+    padding: 0.5rem;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+}
+
+.coverage-status .status-ok {
+    color: #28a745;
+    font-weight: 500;
+}
+
+.coverage-status .status-warning {
+    color: #ffc107;
+    font-weight: 500;
+}
+
+/* Dashboard */
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.dashboard-card {
+    background: var(--white);
+    padding: 2rem;
+    border-radius: 12px;
+    box-shadow: var(--shadow);
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    border-left: 4px solid var(--primary-color);
+}
+
+.dashboard-card i {
+    font-size: 2.5rem;
+    color: var(--secondary-color);
+}
+
+.card-content h4 {
+    margin: 0 0 0.5rem 0;
+    color: var(--medium-gray);
+    font-size: 0.9rem;
+}
+
+.card-value {
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: var(--primary-color);
+}
+
+.dashboard-alertes {
+    background: var(--white);
+    padding: 1.5rem;
+    border-radius: 8px;
+    box-shadow: var(--shadow);
+    border-left: 4px solid #ffc107;
+}
+
+.alertes-list {
+    margin-top: 1rem;
+}
+
+.alerte-item {
+    padding: 0.75rem;
+    background: #fff3cd;
+    border: 1px solid #ffeaa7;
+    border-radius: 4px;
+    margin-bottom: 0.5rem;
+    color: #856404;
+}
+
+/* Contrôles de planning */
+.planning-controls {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 2rem;
+    flex-wrap: wrap;
+    align-items: end;
+}
+
+/* Contrôles de dashboard */
+.dashboard-controls {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 2rem;
+    flex-wrap: wrap;
+    align-items: end;
+}
+
+/* Contrôles de simulation */
+.simulation-controls {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 2rem;
+    flex-wrap: wrap;
+    align-items: end;
+}
+
+/* Styles pour les formulaires d'employés */
+.employe-form {
+    background: var(--white);
+    padding: 2rem;
+    border-radius: 8px;
+    box-shadow: var(--shadow);
+    margin-bottom: 2rem;
+}
+
+.employe-form select[multiple] {
+    min-height: 100px;
+}
+
+/* Styles pour les alertes */
+.alertes-section {
+    background: #fff3cd;
+    border: 1px solid #ffeaa7;
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 2rem;
+}
+
+.alertes-section h4 {
+    color: #856404;
+    margin-bottom: 1rem;
+}
+
+/* Animation pour les transitions */
+.module-content {
+    transition: all 0.3s ease;
+}
+
+.module-section {
+    transition: all 0.3s ease;
+}
+
+/* Styles pour les boutons de module */
+.module-btn {
+    position: relative;
+    overflow: hidden;
+}
+
+.module-btn::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+    transition: left 0.5s;
+}
+
+.module-btn:hover::before {
+    left: 100%;
+}
+
+/* Styles pour les cartes de fonctionnalités */
+.features-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.5rem;
+    margin-top: 2rem;
+}
+
+.feature-card {
+    background: var(--white);
+    padding: 2rem;
+    border-radius: 12px;
+    box-shadow: var(--shadow);
+    text-align: center;
+    transition: all 0.3s ease;
+    border-left: 4px solid var(--primary-color);
+}
+
+.feature-card:hover {
+    transform: translateY(-5px);
+    box-shadow: var(--shadow-hover);
+}
+
+.feature-card i {
+    font-size: 3rem;
+    color: var(--secondary-color);
+    margin-bottom: 1rem;
+}
+
+.feature-card h4 {
+    color: var(--primary-color);
+    margin-bottom: 1rem;
+    font-size: 1.2rem;
+}
+
+.feature-card p {
+    color: var(--medium-gray);
+    line-height: 1.6;
+}
+
+/* Styles pour les sections de saison */
+.season-hours .form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+}
+
+@media (max-width: 768px) {
+    .season-hours .form-row {
+        grid-template-columns: 1fr;
+    }
+    
+    .planning-controls,
+    .dashboard-controls,
+    .simulation-controls {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .features-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .dashboard-grid {
+        grid-template-columns: 1fr;
+    }
+} 
