@@ -57,20 +57,20 @@ class ModuleManager {
 
     // ===== NAVIGATION INTERNE =====
     setupInternalNavigation() {
-        const internalNavLinks = document.querySelectorAll('.internal-nav-link');
+        const tabButtons = document.querySelectorAll('.tab-btn');
         
-        internalNavLinks.forEach(link => {
-            link.addEventListener('click', (e) => {
+        tabButtons.forEach(button => {
+            button.addEventListener('click', (e) => {
                 e.preventDefault();
                 
-                // Retirer la classe active de tous les liens
-                internalNavLinks.forEach(l => l.classList.remove('active'));
+                // Retirer la classe active de tous les boutons
+                tabButtons.forEach(btn => btn.classList.remove('active'));
                 
-                // Ajouter la classe active au lien cliqué
-                link.classList.add('active');
+                // Ajouter la classe active au bouton cliqué
+                button.classList.add('active');
                 
                 // Afficher la section correspondante
-                const targetId = link.getAttribute('href').substring(1);
+                const targetId = button.dataset.tab;
                 this.showSection(targetId);
             });
         });
@@ -91,10 +91,10 @@ class ModuleManager {
 
     resetInternalNavigation() {
         // Réinitialiser à la première section
-        const firstLink = document.querySelector('.internal-nav-link');
-        if (firstLink) {
-            document.querySelectorAll('.internal-nav-link').forEach(l => l.classList.remove('active'));
-            firstLink.classList.add('active');
+        const firstTab = document.querySelector('.tab-btn');
+        if (firstTab) {
+            document.querySelectorAll('.tab-btn').forEach(tab => tab.classList.remove('active'));
+            firstTab.classList.add('active');
             
             const firstSection = document.querySelector('.module-section');
             if (firstSection) {
@@ -119,6 +119,68 @@ let moduleManager;
 
 document.addEventListener('DOMContentLoaded', () => {
     moduleManager = new ModuleManager();
+    
+    // ===== CONFIGURATION VERROUILLÉE =====
+    // S'assurer que le module RH est actif par défaut
+    const rhModule = document.getElementById('rh-module');
+    if (rhModule) {
+        rhModule.classList.add('active');
+    }
+    
+    // S'assurer que la section PRÉSENTATION est active par défaut
+    const presentationSection = document.getElementById('rh-presentation');
+    if (presentationSection) {
+        presentationSection.classList.add('active');
+    }
+    
+    // S'assurer que le bouton PRÉSENTATION est actif
+    const presentationTab = document.querySelector('[data-tab="rh-presentation"]');
+    if (presentationTab) {
+        presentationTab.classList.add('active');
+    }
+    
+    // ===== SAUVEGARDE AUTOMATIQUE DE LA CONFIGURATION =====
+    const config = {
+        defaultModule: 'rh',
+        defaultSection: 'rh-presentation',
+        defaultTab: 'rh-presentation',
+        timestamp: Date.now()
+    };
+    
+    // Sauvegarder la configuration
+    localStorage.setItem('gestPrevConfig', JSON.stringify(config));
+    
+    // ===== RESTAURATION AUTOMATIQUE EN CAS DE PROBLÈME =====
+    setTimeout(() => {
+        // Vérifier que la présentation est bien affichée
+        const currentSection = document.querySelector('.module-section.active');
+        if (!currentSection || currentSection.id !== 'rh-presentation') {
+            console.log('Restauration automatique de la configuration...');
+            
+            // Masquer toutes les sections
+            document.querySelectorAll('.module-section').forEach(section => {
+                section.classList.remove('active');
+            });
+            
+            // Afficher la présentation
+            const presentation = document.getElementById('rh-presentation');
+            if (presentation) {
+                presentation.classList.add('active');
+            }
+            
+            // Activer l'onglet présentation
+            document.querySelectorAll('.tab-btn').forEach(tab => tab.classList.remove('active'));
+            const presTab = document.querySelector('[data-tab="rh-presentation"]');
+            if (presTab) {
+                presTab.classList.add('active');
+            }
+        }
+    }, 100);
+    
+    // Initialiser l'application GEST PREV
+    if (window.gestPrevApp) {
+        window.gestPrevApp.init();
+    }
 });
 
 // ===== FONCTIONS GLOBALES =====

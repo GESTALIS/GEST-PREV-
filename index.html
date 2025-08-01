@@ -11,8 +11,8 @@
 <body>
     <!-- Header -->
     <header class="main-header">
-        <div class="header-content">
-            <div class="logo">
+            <div class="header-content">
+                <div class="logo">
                 <div class="logo-icon">
                     <div class="icon-part icon-part-1"></div>
                     <div class="icon-part icon-part-2"></div>
@@ -24,37 +24,61 @@
             </div>
             <nav class="main-nav">
                 <div class="module-buttons">
-                    <button class="module-btn active" data-module="rh">
-                        <i class="fas fa-users"></i>
-                        <span>RH</span>
-                    </button>
+                        <button class="module-btn active" data-module="rh">
+                            <i class="fas fa-users"></i>
+                            <span>RH</span>
+                        </button>
                     <button class="module-btn" data-module="financier">
-                        <i class="fas fa-euro-sign"></i>
-                        <span>Financier</span>
-                        <span class="coming-soon">Bientôt</span>
-                    </button>
+                            <i class="fas fa-euro-sign"></i>
+                            <span>Financier</span>
+                            <span class="coming-soon">Bientôt</span>
+                        </button>
                     <button class="module-btn" data-module="infrastructure">
-                        <i class="fas fa-building"></i>
-                        <span>Infrastructure</span>
-                        <span class="coming-soon">Bientôt</span>
-                    </button>
+                            <i class="fas fa-building"></i>
+                            <span>Infrastructure</span>
+                            <span class="coming-soon">Bientôt</span>
+                        </button>
                     <button class="module-btn" data-module="commercial">
-                        <i class="fas fa-chart-line"></i>
-                        <span>Commercial</span>
-                        <span class="coming-soon">Bientôt</span>
-                    </button>
+                            <i class="fas fa-chart-line"></i>
+                            <span>Commercial</span>
+                            <span class="coming-soon">Bientôt</span>
+                        </button>
                     <button class="module-btn" data-module="environnement">
-                        <i class="fas fa-leaf"></i>
-                        <span>Environnement</span>
-                        <span class="coming-soon">Bientôt</span>
-                    </button>
+                            <i class="fas fa-leaf"></i>
+                            <span>Environnement</span>
+                            <span class="coming-soon">Bientôt</span>
+                        </button>
                     <button class="module-btn" data-module="operationnel">
-                        <i class="fas fa-cogs"></i>
-                        <span>Opérationnel</span>
-                        <span class="coming-soon">Bientôt</span>
-                    </button>
-                </div>
-            </nav>
+                            <i class="fas fa-cogs"></i>
+                            <span>Opérationnel</span>
+                            <span class="coming-soon">Bientôt</span>
+                        </button>
+                    </div>
+                    
+                    <!-- Système d'export global -->
+                    <div class="export-controls">
+                        <button type="button" id="export-btn" class="btn btn-secondary">
+                            <i class="fas fa-download"></i> Exporter
+                        </button>
+                        <div class="export-dropdown" style="display: none;">
+                            <button type="button" class="export-option" data-format="excel">
+                                <i class="fas fa-file-excel"></i> Excel (.xlsx)
+                            </button>
+                            <button type="button" class="export-option" data-format="pdf">
+                                <i class="fas fa-file-pdf"></i> PDF (.pdf)
+                            </button>
+                            <button type="button" class="export-option" data-format="word">
+                                <i class="fas fa-file-word"></i> Word (.docx)
+                            </button>
+                            <button type="button" class="export-option" data-format="csv">
+                                <i class="fas fa-file-csv"></i> CSV (.csv)
+                            </button>
+                            <button type="button" class="export-option" data-format="json">
+                                <i class="fas fa-file-code"></i> JSON (.json)
+                            </button>
+                        </div>
+                    </div>
+                </nav>
         </div>
     </header>
 
@@ -71,21 +95,70 @@
         <!-- Module RH -->
         <div id="rh-module" class="module-content active">
             <div class="module-tabs">
-                <button class="tab-btn" data-tab="rh-presentation">Présentation</button>
-                <button class="tab-btn active" data-tab="rh-services">Services</button>
+                <button class="tab-btn active" data-tab="rh-presentation">Présentation</button>
+                <button class="tab-btn" data-tab="rh-services">Services</button>
                 <button class="tab-btn" data-tab="rh-employes">Employés</button>
-                <button class="tab-btn" data-tab="rh-planning">Planning</button>
+                <button class="tab-btn" data-tab="rh-configuration">Configuration</button>
                 <button class="tab-btn" data-tab="rh-simulation">Simulation</button>
-                <button class="tab-btn" data-tab="rh-dashboard">Tableau de bord</button>
-            </div>
-
-            <!-- Section Services RH -->
-            <section id="rh-services" class="module-section active">
-                <div class="section-header">
-                    <h3><i class="fas fa-cogs"></i> Configuration des services</h3>
-                    <p>Définissez vos services avec catégories et horaires saisonniers</p>
                 </div>
-                <div class="services-container">
+
+                <!-- Section Présentation RH -->
+                <section id="rh-presentation" class="module-section active">
+                    <div class="section-header">
+                    <h3><i class="fas fa-info-circle"></i> Présentation du module RH</h3>
+                    <p>Découvrez les fonctionnalités de gestion prévisionnelle des ressources humaines</p>
+                    </div>
+                <div class="presentation-container">
+                    <div class="features-grid">
+                        <div class="feature-card">
+                            <i class="fas fa-cogs"></i>
+                            <h4>Configuration des services</h4>
+                            <p>Définissez vos services avec horaires saisonniers et catégories</p>
+                        </div>
+                        <div class="feature-card">
+                            <i class="fas fa-user-friends"></i>
+                            <h4>Gestion des employés</h4>
+                            <p>Configurez vos employés avec quotas et attributions multi-services</p>
+                        </div>
+                        <div class="feature-card">
+                            <i class="fas fa-calendar-alt"></i>
+                            <h4>Planning prévisionnel</h4>
+                            <p>Générez des plannings optimisés selon vos besoins</p>
+                        </div>
+                        <div class="feature-card">
+                            <i class="fas fa-chart-line"></i>
+                            <h4>Simulation RH</h4>
+                            <p>Simulez différents scénarios de gestion des ressources</p>
+                        </div>
+                        <div class="feature-card">
+                            <i class="fas fa-tachometer-alt"></i>
+                            <h4>Tableau de bord</h4>
+                            <p>Visualisez les indicateurs clés de vos ressources humaines</p>
+                        </div>
+                        <div class="feature-card">
+                            <i class="fas fa-calculator"></i>
+                            <h4>Calculs automatiques</h4>
+                            <p>Calculs automatiques des heures et coûts par saison</p>
+                        </div>
+                        </div>
+                        
+                        <!-- Bouton pour créer les données de test -->
+                        <div class="test-data-section">
+                            <button type="button" id="create-test-data" class="btn btn-secondary">
+                                <i class="fas fa-database"></i> Créer les données de test
+                            </button>
+                            <small>Cliquez ici si vous n'avez pas de données pour tester l'application</small>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Section Services RH -->
+                <section id="rh-services" class="module-section">
+                    <div class="section-header">
+                        <h3><i class="fas fa-cogs"></i> Configuration des services</h3>
+                        <p>Définissez vos services avec catégories et horaires saisonniers</p>
+                    </div>
+                    <div class="services-container">
                     <div class="services-header">
                         <h3>Services configurés</h3>
                         <button type="button" id="show-service-form" class="btn btn-primary">
@@ -93,24 +166,24 @@
                         </button>
                     </div>
                     <form id="service-form" class="service-form" style="display: none;">
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="service-name">Nom du service</label>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="service-name">Nom du service</label>
                                 <input type="text" id="service-name" name="service-name" placeholder="Ex: Réception, Restaurant..." required>
-                            </div>
-                            <div class="form-group">
-                                <label for="service-category">Catégorie</label>
-                                <select id="service-category" name="service-category" required>
-                                    <option value="">Sélectionner...</option>
-                                    <option value="hotellerie">🏨 Hôtellerie</option>
+                                </div>
+                                <div class="form-group">
+                                    <label for="service-category">Catégorie</label>
+                                    <select id="service-category" name="service-category" required>
+                                        <option value="">Sélectionner...</option>
+                                        <option value="hotellerie">🏨 Hôtellerie</option>
                                     <option value="restauration">🍽️ Restauration</option>
                                     <option value="loisirs">🎯 Loisirs</option>
-                                    <option value="technique">🔧 Technique</option>
-                                    <option value="administratif">📋 Administratif</option>
-                                </select>
+                                        <option value="technique">🔧 Technique</option>
+                                        <option value="administratif">📋 Administratif</option>
+                                    </select>
+                                </div>
                             </div>
-                        </div>
-                        
+                            
                         <!-- Configuration horaires jour par jour -->
                         <div class="daily-hours-config">
                             <h4><i class="fas fa-calendar-week"></i> Horaires par jour</h4>
@@ -123,14 +196,10 @@
                                             <div class="season-header">
                                                 <label>Haute saison</label>
                                                 <div class="season-options">
-                                                    <label class="checkbox-label">
-                                                        <input type="checkbox" class="ferme-checkbox" name="lundi-haute-ferme">
+                                                    <button type="button" class="ferme-btn" data-day="lundi" data-season="haute">
+                                                        <i class="fas fa-lock"></i>
                                                         <span>Fermé</span>
-                                                    </label>
-                                                    <label class="checkbox-label">
-                                                        <input type="checkbox" class="meme-basse-checkbox" name="lundi-haute-meme-basse">
-                                                        <span>Même horaires que basse saison</span>
-                                                    </label>
+                                                    </button>
                                                 </div>
                                             </div>
                                             <div class="time-inputs">
@@ -143,10 +212,10 @@
                                             <div class="season-header">
                                                 <label>Basse saison</label>
                                                 <div class="season-options">
-                                                    <label class="checkbox-label">
-                                                        <input type="checkbox" class="ferme-checkbox" name="lundi-basse-ferme">
+                                                    <button type="button" class="ferme-btn" data-day="lundi" data-season="basse">
+                                                        <i class="fas fa-lock"></i>
                                                         <span>Fermé</span>
-                                                    </label>
+                                                    </button>
                                                 </div>
                                             </div>
                                             <div class="time-inputs">
@@ -165,16 +234,6 @@
                                         <div class="season-hours-day">
                                             <div class="season-header">
                                                 <label>Haute saison</label>
-                                                <div class="season-options">
-                                                    <label class="checkbox-label">
-                                                        <input type="checkbox" class="ferme-checkbox" name="mardi-haute-ferme">
-                                                        <span>Fermé</span>
-                                                    </label>
-                                                    <label class="checkbox-label">
-                                                        <input type="checkbox" class="meme-basse-checkbox" name="mardi-haute-meme-basse">
-                                                        <span>Même horaires que basse saison</span>
-                                                    </label>
-                                                </div>
                                             </div>
                                             <div class="time-inputs">
                                                 <input type="time" name="mardi-haute-ouverture" placeholder="08:00">
@@ -185,12 +244,6 @@
                                         <div class="season-hours-day">
                                             <div class="season-header">
                                                 <label>Basse saison</label>
-                                                <div class="season-options">
-                                                    <label class="checkbox-label">
-                                                        <input type="checkbox" class="ferme-checkbox" name="mardi-basse-ferme">
-                                                        <span>Fermé</span>
-                                                    </label>
-                                                </div>
                                             </div>
                                             <div class="time-inputs">
                                                 <input type="time" name="mardi-basse-ouverture" placeholder="09:00">
@@ -208,16 +261,6 @@
                                         <div class="season-hours-day">
                                             <div class="season-header">
                                                 <label>Haute saison</label>
-                                                <div class="season-options">
-                                                    <label class="checkbox-label">
-                                                        <input type="checkbox" class="ferme-checkbox" name="mercredi-haute-ferme">
-                                                        <span>Fermé</span>
-                                                    </label>
-                                                    <label class="checkbox-label">
-                                                        <input type="checkbox" class="meme-basse-checkbox" name="mercredi-haute-meme-basse">
-                                                        <span>Même horaires que basse saison</span>
-                                                    </label>
-                                                </div>
                                             </div>
                                             <div class="time-inputs">
                                                 <input type="time" name="mercredi-haute-ouverture" placeholder="08:00">
@@ -228,22 +271,16 @@
                                         <div class="season-hours-day">
                                             <div class="season-header">
                                                 <label>Basse saison</label>
-                                                <div class="season-options">
-                                                    <label class="checkbox-label">
-                                                        <input type="checkbox" class="ferme-checkbox" name="mercredi-basse-ferme">
-                                                        <span>Fermé</span>
-                                                    </label>
-                                                </div>
                                             </div>
                                             <div class="time-inputs">
                                                 <input type="time" name="mercredi-basse-ouverture" placeholder="09:00">
                                                 <span>à</span>
                                                 <input type="time" name="mercredi-basse-fermeture" placeholder="17:00">
                                             </div>
-                                        </div>
                                     </div>
                                 </div>
-                                
+                            </div>
+
                                 <!-- Jeudi -->
                                 <div class="day-hours-card">
                                     <h5>Jeudi</h5>
@@ -251,16 +288,6 @@
                                         <div class="season-hours-day">
                                             <div class="season-header">
                                                 <label>Haute saison</label>
-                                                <div class="season-options">
-                                                    <label class="checkbox-label">
-                                                        <input type="checkbox" class="ferme-checkbox" name="jeudi-haute-ferme">
-                                                        <span>Fermé</span>
-                                                    </label>
-                                                    <label class="checkbox-label">
-                                                        <input type="checkbox" class="meme-basse-checkbox" name="jeudi-haute-meme-basse">
-                                                        <span>Même horaires que basse saison</span>
-                                                    </label>
-                                                </div>
                                             </div>
                                             <div class="time-inputs">
                                                 <input type="time" name="jeudi-haute-ouverture" placeholder="08:00">
@@ -271,12 +298,6 @@
                                         <div class="season-hours-day">
                                             <div class="season-header">
                                                 <label>Basse saison</label>
-                                                <div class="season-options">
-                                                    <label class="checkbox-label">
-                                                        <input type="checkbox" class="ferme-checkbox" name="jeudi-basse-ferme">
-                                                        <span>Fermé</span>
-                                                    </label>
-                                                </div>
                                             </div>
                                             <div class="time-inputs">
                                                 <input type="time" name="jeudi-basse-ouverture" placeholder="09:00">
@@ -294,16 +315,6 @@
                                         <div class="season-hours-day">
                                             <div class="season-header">
                                                 <label>Haute saison</label>
-                                                <div class="season-options">
-                                                    <label class="checkbox-label">
-                                                        <input type="checkbox" class="ferme-checkbox" name="vendredi-haute-ferme">
-                                                        <span>Fermé</span>
-                                                    </label>
-                                                    <label class="checkbox-label">
-                                                        <input type="checkbox" class="meme-basse-checkbox" name="vendredi-haute-meme-basse">
-                                                        <span>Même horaires que basse saison</span>
-                                                    </label>
-                                                </div>
                                             </div>
                                             <div class="time-inputs">
                                                 <input type="time" name="vendredi-haute-ouverture" placeholder="08:00">
@@ -314,12 +325,6 @@
                                         <div class="season-hours-day">
                                             <div class="season-header">
                                                 <label>Basse saison</label>
-                                                <div class="season-options">
-                                                    <label class="checkbox-label">
-                                                        <input type="checkbox" class="ferme-checkbox" name="vendredi-basse-ferme">
-                                                        <span>Fermé</span>
-                                                    </label>
-                                                </div>
                                             </div>
                                             <div class="time-inputs">
                                                 <input type="time" name="vendredi-basse-ouverture" placeholder="09:00">
@@ -337,16 +342,6 @@
                                         <div class="season-hours-day">
                                             <div class="season-header">
                                                 <label>Haute saison</label>
-                                                <div class="season-options">
-                                                    <label class="checkbox-label">
-                                                        <input type="checkbox" class="ferme-checkbox" name="samedi-haute-ferme">
-                                                        <span>Fermé</span>
-                                                    </label>
-                                                    <label class="checkbox-label">
-                                                        <input type="checkbox" class="meme-basse-checkbox" name="samedi-haute-meme-basse">
-                                                        <span>Même horaires que basse saison</span>
-                                                    </label>
-                                                </div>
                                             </div>
                                             <div class="time-inputs">
                                                 <input type="time" name="samedi-haute-ouverture" placeholder="08:00">
@@ -357,19 +352,13 @@
                                         <div class="season-hours-day">
                                             <div class="season-header">
                                                 <label>Basse saison</label>
-                                                <div class="season-options">
-                                                    <label class="checkbox-label">
-                                                        <input type="checkbox" class="ferme-checkbox" name="samedi-basse-ferme">
-                                                        <span>Fermé</span>
-                                                    </label>
-                                                </div>
                                             </div>
                                             <div class="time-inputs">
                                                 <input type="time" name="samedi-basse-ouverture" placeholder="09:00">
                                                 <span>à</span>
                                                 <input type="time" name="samedi-basse-fermeture" placeholder="17:00">
-                                            </div>
-                                        </div>
+                                </div>
+                            </div>
                                     </div>
                                 </div>
                                 
@@ -380,16 +369,6 @@
                                         <div class="season-hours-day">
                                             <div class="season-header">
                                                 <label>Haute saison</label>
-                                                <div class="season-options">
-                                                    <label class="checkbox-label">
-                                                        <input type="checkbox" class="ferme-checkbox" name="dimanche-haute-ferme">
-                                                        <span>Fermé</span>
-                                                    </label>
-                                                    <label class="checkbox-label">
-                                                        <input type="checkbox" class="meme-basse-checkbox" name="dimanche-haute-meme-basse">
-                                                        <span>Même horaires que basse saison</span>
-                                                    </label>
-                                                </div>
                                             </div>
                                             <div class="time-inputs">
                                                 <input type="time" name="dimanche-haute-ouverture" placeholder="08:00">
@@ -400,19 +379,13 @@
                                         <div class="season-hours-day">
                                             <div class="season-header">
                                                 <label>Basse saison</label>
-                                                <div class="season-options">
-                                                    <label class="checkbox-label">
-                                                        <input type="checkbox" class="ferme-checkbox" name="dimanche-basse-ferme">
-                                                        <span>Fermé</span>
-                                                    </label>
-                                                </div>
                                             </div>
                                             <div class="time-inputs">
                                                 <input type="time" name="dimanche-basse-ouverture" placeholder="09:00">
                                                 <span>à</span>
                                                 <input type="time" name="dimanche-basse-fermeture" placeholder="17:00">
-                                            </div>
-                                        </div>
+                                </div>
+                            </div>
                                     </div>
                                 </div>
                             </div>
@@ -425,215 +398,409 @@
                                 <i class="fas fa-times"></i> Annuler
                             </button>
                         </div>
-                    </form>
-                    <div id="services-list" class="services-list">
-                        <!-- Services ajoutés apparaîtront ici -->
+                        </form>
+                        <div id="services-list" class="services-list">
+                            <!-- Services ajoutés apparaîtront ici -->
+                        </div>
                     </div>
-                </div>
-            </section>
+                </section>
 
-            <!-- Section Employés RH -->
-            <section id="rh-employes" class="module-section">
-                <div class="section-header">
-                    <h3><i class="fas fa-user-friends"></i> Gestion des employés</h3>
-                    <p>Configurez vos employés et leurs attributions multi-services</p>
-                </div>
-                <div class="employes-container">
-                    <form id="employe-form" class="employe-form">
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="employe-nom">Nom et prénom</label>
-                                <input type="text" id="employe-nom" name="employe-nom" placeholder="Ex: Martin Dupont..." required>
-                            </div>
-                            <div class="form-group">
-                                <label for="employe-quota">Quota hebdomadaire (h)</label>
-                                <input type="number" id="employe-quota" name="employe-quota" min="1" max="60" value="35" required>
-                            </div>
-                        </div>
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="employe-taux">Taux horaire (€)</label>
-                                <input type="number" id="employe-taux" name="employe-taux" min="0" step="0.01" value="12.50" required>
-                            </div>
-                            <div class="form-group">
-                                <label for="employe-categorie">Catégorie</label>
-                                <select id="employe-categorie" name="employe-categorie" required>
-                                    <option value="">Sélectionner...</option>
-                                    <option value="I-1">I-1</option>
-                                    <option value="I-2">I-2</option>
-                                    <option value="I-3">I-3</option>
-                                    <option value="II-1">II-1</option>
-                                    <option value="II-2">II-2</option>
-                                    <option value="II-3">II-3</option>
-                                    <option value="III-1">III-1</option>
-                                    <option value="III-2">III-2</option>
-                                    <option value="III-3">III-3</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="employe-echelon">Échelon</label>
-                                <select id="employe-echelon" name="employe-echelon" required>
-                                    <option value="">Sélectionner...</option>
-                                    <option value="1">1</option>
-                                    <option value="2">2</option>
-                                    <option value="3">3</option>
-                                    <option value="4">4</option>
-                                    <option value="5">5</option>
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label for="employe-niveau">Niveau</label>
-                                <select id="employe-niveau" name="employe-niveau" required>
-                                    <option value="">Sélectionner...</option>
-                                    <option value="Débutant">Débutant</option>
-                                    <option value="Intermédiaire">Intermédiaire</option>
-                                    <option value="Confirmé">Confirmé</option>
-                                    <option value="Expert">Expert</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="employe-services">Services assignés</label>
-                                <select id="employe-services" name="employe-services" multiple>
-                                    <!-- Options générées dynamiquement -->
-                                </select>
-                            </div>
-                        </div>
-                        <button type="submit" class="btn btn-primary">
-                            <i class="fas fa-plus"></i> Ajouter l'employé
+                                <!-- Section Employés RH -->
+                <section id="rh-employes" class="module-section">
+                    <div class="section-header">
+                        <h3><i class="fas fa-user-friends"></i> Gestion prévisionnelle des employés</h3>
+                        <p>Configurez vos employés avec contrats modulation annuelle et planification sur 5 ans</p>
+                    </div>
+                    
+                    <!-- En-tête des employés -->
+                    <div class="employes-header">
+                        <h3>Employés prévisionnels</h3>
+                        <button type="button" id="show-employe-form" class="btn btn-primary">
+                            <i class="fas fa-plus"></i> Ajouter un employé
                         </button>
+                    </div>
+                    
+                    <!-- Formulaire employé (développable) -->
+                    <form id="employe-form" class="employe-form" style="display: none;">
+                        <div class="form-section">
+                            <h4><i class="fas fa-user"></i> Identité</h4>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="employe-nom">Nom</label>
+                                    <input type="text" id="employe-nom" name="employe-nom" placeholder="Ex: Dupont" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="employe-prenom">Prénom</label>
+                                    <input type="text" id="employe-prenom" name="employe-prenom" placeholder="Ex: Jean" required>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="form-section">
+                            <h4><i class="fas fa-tags"></i> Classification</h4>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="employe-categorie">Catégorie</label>
+                                    <select id="employe-categorie" name="employe-categorie" required>
+                                        <option value="">Sélectionner...</option>
+                                        <option value="reception">🏨 Réception</option>
+                                        <option value="cuisine">👨‍🍳 Cuisine</option>
+                                        <option value="service">🍽️ Service</option>
+                                        <option value="technique">🔧 Technique</option>
+                                        <option value="administratif">📋 Administratif</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="employe-niveau">Niveau</label>
+                                    <select id="employe-niveau" name="employe-niveau" required>
+                                        <option value="">Sélectionner...</option>
+                                        <option value="debutant">Débutant</option>
+                                        <option value="confirme">Confirmé</option>
+                                        <option value="expert">Expert</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="employe-echelon">Échelon</label>
+                                    <select id="employe-echelon" name="employe-echelon" required>
+                                        <option value="">Sélectionner...</option>
+                                        <option value="1">1</option>
+                                        <option value="2">2</option>
+                                        <option value="3">3</option>
+                                        <option value="4">4</option>
+                                        <option value="5">5</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="employe-type-contrat">Type de contrat</label>
+                                    <select id="employe-type-contrat" name="employe-type-contrat" required>
+                                        <option value="">Sélectionner...</option>
+                                        <option value="CDI">CDI</option>
+                                        <option value="CDD">CDD</option>
+                                        <option value="interim">Intérim</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="form-section">
+                            <h4><i class="fas fa-euro-sign"></i> Coûts prévisionnels</h4>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="employe-taux-brut">Taux horaire brut (€)</label>
+                                    <input type="number" id="employe-taux-brut" name="employe-taux-brut" min="0" step="0.01" value="15.50" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="employe-taux-charges">Taux charges patronales (%)</label>
+                                    <input type="number" id="employe-taux-charges" name="employe-taux-charges" min="0" max="100" step="0.1" value="45.0" required>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="form-section">
+                            <h4><i class="fas fa-clock"></i> Capacité prévisionnelle</h4>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="employe-modulation">
+                                        <input type="checkbox" id="employe-modulation" name="employe-modulation" checked>
+                                        Contrat modulation annuelle (39h/sem)
+                                    </label>
+                                </div>
+                                <div class="form-group">
+                                    <label for="employe-heures-annuel">Heures contractuelles annuelles</label>
+                                    <input type="number" id="employe-heures-annuel" name="employe-heures-annuel" value="2028" min="0" readonly>
+                                    <small>39h × 52 semaines = 2,028h/an</small>
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="employe-conges">Congés payés (jours/an)</label>
+                                    <input type="number" id="employe-conges" name="employe-conges" value="25" min="0" max="35">
+                                </div>
+                                <div class="form-group">
+                                    <label for="employe-rtt">RTT (jours/an)</label>
+                                    <input type="number" id="employe-rtt" name="employe-rtt" value="0" min="0" max="20">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="form-section">
+                            <h4><i class="fas fa-tasks"></i> Attribution prévisionnelle</h4>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="employe-services">Services assignés</label>
+                                    <div class="services-checkboxes">
+                                        <!-- Options générées dynamiquement -->
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="employe-priorite">Priorité d'attribution (1-5)</label>
+                                    <select id="employe-priorite" name="employe-priorite" required>
+                                        <option value="1">1 - Très haute</option>
+                                        <option value="2" selected>2 - Haute</option>
+                                        <option value="3">3 - Moyenne</option>
+                                        <option value="4">4 - Basse</option>
+                                        <option value="5">5 - Très basse</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="form-actions">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-plus"></i> Ajouter l'employé
+                            </button>
+                            <button type="button" id="cancel-employe-form" class="btn btn-secondary">
+                                <i class="fas fa-times"></i> Annuler
+                            </button>
+                        </div>
                     </form>
+                    
+                    <!-- Liste des employés -->
                     <div id="employes-list" class="employes-list">
                         <!-- Employés ajoutés apparaîtront ici -->
                     </div>
-                </div>
-            </section>
+                </section>
 
-            <!-- Section Planning RH -->
-            <section id="rh-planning" class="module-section">
-                <div class="section-header">
-                    <h3><i class="fas fa-calendar-alt"></i> Planning prévisionnel</h3>
-                    <p>Générez des plannings optimisés selon vos besoins</p>
-                </div>
-                <div class="planning-container">
-                    <div class="planning-controls">
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="planning-service">Service</label>
-                                <select id="planning-service" name="planning-service" required>
-                                    <option value="">Sélectionner un service...</option>
-                                </select>
+                <!-- Section Configuration RH -->
+                <section id="rh-configuration" class="module-section">
+                    <div class="section-header">
+                        <h3><i class="fas fa-cogs"></i> Configuration</h3>
+                        <p>Configuration des règles légales et saisonnières pour la simulation</p>
+                    </div>
+                    
+                    <!-- Configuration des règles légales -->
+                    <div class="legal-rules-container">
+                        <div class="rules-header">
+                            <h4><i class="fas fa-gavel"></i> Configuration des règles légales</h4>
+                            <small>Code du Travail & Convention Collective Hôtellerie-Restauration</small>
+                        </div>
+                        <div class="rules-content">
+                            <div class="rules-section">
+                                <h5><i class="fas fa-clock"></i> Règles de temps de travail</h5>
+                                <div class="rules-grid">
+                                    <div class="rule-item">
+                                        <label for="rule-heures-jour">Heures/jour</label>
+                                        <input type="number" id="rule-heures-jour" step="0.1" value="7.8">
+                                        <small>Heures par jour de travail</small>
+                                    </div>
+                                    <div class="rule-item">
+                                        <label for="rule-heures-semaine">Heures/semaine</label>
+                                        <input type="number" id="rule-heures-semaine" value="39">
+                                        <small>Heures par semaine (39h modulable)</small>
+                                    </div>
+                                    <div class="rule-item">
+                                        <label for="rule-heures-mois">Heures/mois</label>
+                                        <input type="number" id="rule-heures-mois" readonly value="169">
+                                        <small>Calculé automatiquement</small>
+                                    </div>
+                                    <div class="rule-item">
+                                        <label for="rule-heures-an">Heures/an</label>
+                                        <input type="number" id="rule-heures-an" readonly value="1787">
+                                        <small>Calculé automatiquement</small>
+                                    </div>
+                                </div>
                             </div>
-                            <div class="form-group">
-                                <label for="planning-saison">Saison</label>
-                                <select id="planning-saison" name="planning-saison" required>
-                                    <option value="">Sélectionner...</option>
-                                    <option value="haute">Haute saison</option>
-                                    <option value="basse">Basse saison</option>
-                                </select>
+                            
+                            <div class="rules-section">
+                                <h5><i class="fas fa-exclamation-triangle"></i> Limites légales</h5>
+                                <div class="rules-grid">
+                                    <div class="rule-item">
+                                        <label for="rule-max-jour">Max heures/jour</label>
+                                        <input type="number" id="rule-max-jour" value="10">
+                                        <small>Maximum légal par jour</small>
+                                    </div>
+                                    <div class="rule-item">
+                                        <label for="rule-max-semaine">Max heures/semaine</label>
+                                        <input type="number" id="rule-max-semaine" value="48">
+                                        <small>Maximum légal par semaine</small>
+                                    </div>
+                                    <div class="rule-item">
+                                        <label for="rule-heures-sup">Heures supplémentaires</label>
+                                        <input type="number" id="rule-heures-sup" value="220">
+                                        <small>Limite annuelle</small>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="rules-section">
+                                <h5><i class="fas fa-umbrella-beach"></i> Congés et repos</h5>
+                                <div class="rules-grid">
+                                    <div class="rule-item">
+                                        <label for="rule-conges">Congés payés (jours)</label>
+                                        <input type="number" id="rule-conges" value="25">
+                                        <small>Jours de congés payés</small>
+                                    </div>
+                                    <div class="rule-item">
+                                        <label for="rule-repos">Repos hebdomadaire (h)</label>
+                                        <input type="number" id="rule-repos" value="24">
+                                        <small>Heures de repos consécutives</small>
+                                    </div>
+                                </div>
                             </div>
                         </div>
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="planning-test-quota">Test quota employé</label>
-                                <select id="planning-test-quota" name="planning-test-quota">
-                                    <option value="">Sélectionner un employé...</option>
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label for="planning-coverage">Couverture minimale</label>
-                                <input type="number" id="planning-coverage" name="planning-coverage" min="1" max="10" value="2" required>
-                            </div>
+                        <div class="rules-actions">
+                            <button type="button" id="save-rules" class="btn btn-success">
+                                <i class="fas fa-save"></i> Sauvegarder
+                            </button>
+                            <button type="button" id="reset-rules" class="btn btn-secondary">
+                                <i class="fas fa-undo"></i> Restaurer
+                            </button>
+                            <button type="button" id="validate-rules" class="btn btn-primary">
+                                <i class="fas fa-check"></i> Valider
+                            </button>
                         </div>
-                        <button type="button" id="generate-planning" class="btn btn-primary">
-                            <i class="fas fa-magic"></i> Générer le planning
-                        </button>
                     </div>
-                    <div id="planning-results" class="planning-results">
-                        <!-- Résultats du planning apparaîtront ici -->
-                    </div>
-                </div>
-            </section>
 
-            <!-- Section Simulation RH -->
-            <section id="rh-simulation" class="module-section">
-                <div class="section-header">
-                    <h3><i class="fas fa-chart-line"></i> Simulation RH</h3>
-                    <p>Simulez différents scénarios de gestion des ressources humaines</p>
-                </div>
-                <div class="simulation-container">
-                    <div class="simulation-controls">
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="simulation-periode">Période de simulation</label>
-                                <select id="simulation-periode" name="simulation-periode" required>
-                                    <option value="">Sélectionner...</option>
-                                    <option value="1">1 mois</option>
-                                    <option value="3">3 mois</option>
-                                    <option value="6">6 mois</option>
-                                    <option value="12">12 mois</option>
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label for="simulation-taux-charges">Taux de charges (%)</label>
-                                <input type="number" id="simulation-taux-charges" name="simulation-taux-charges" min="0" max="100" value="25" required>
+                    <!-- Configuration saisonnière (Guyane Zone A) -->
+                    <div class="seasons-container">
+                        <div class="seasons-header">
+                            <h4><i class="fas fa-sun"></i> Configuration saisonnière (Guyane Zone A)</h4>
+                        </div>
+                        <div class="seasons-content">
+                            <div class="season-config">
+                                <h5><i class="fas fa-calendar"></i> Périodes de vacances scolaires (Haute saison)</h5>
+                                <div class="vacation-periods">
+                                    <div class="vacation-item">
+                                        <label>Toussaint</label>
+                                        <input type="date" value="2024-10-21">
+                                        <span>à</span>
+                                        <input type="date" value="2024-11-06">
+                                    </div>
+                                    <div class="vacation-item">
+                                        <label>Noël</label>
+                                        <input type="date" value="2024-12-18">
+                                        <span>à</span>
+                                        <input type="date" value="2025-01-03">
+                                    </div>
+                                    <div class="vacation-item">
+                                        <label>Carnaval</label>
+                                        <input type="date" value="2025-02-10">
+                                        <span>à</span>
+                                        <input type="date" value="2025-02-26">
+                                    </div>
+                                    <div class="vacation-item">
+                                        <label>Pâques</label>
+                                        <input type="date" value="2025-04-08">
+                                        <span>à</span>
+                                        <input type="date" value="2025-04-24">
+                                    </div>
+                                    <div class="vacation-item">
+                                        <label>Été</label>
+                                        <input type="date" value="2025-07-06">
+                                        <span>à</span>
+                                        <input type="date" value="2025-09-01">
+                                    </div>
+                                </div>
+                                <div class="season-info">
+                                    <p><strong>Note :</strong> Les périodes de vacances scolaires sont considérées comme <strong>haute saison</strong> pour les calculs de simulation.</p>
+                                </div>
                             </div>
                         </div>
-                        <button type="button" id="run-simulation" class="btn btn-primary">
-                            <i class="fas fa-play"></i> Lancer la simulation
-                        </button>
                     </div>
-                    <div id="simulation-results" class="simulation-results">
-                        <!-- Résultats de simulation apparaîtront ici -->
-                    </div>
-                </div>
-            </section>
+                </section>
 
-            <!-- Section Tableau de bord RH -->
-            <section id="rh-dashboard" class="module-section">
-                <div class="section-header">
-                    <h3><i class="fas fa-tachometer-alt"></i> Tableau de bord RH</h3>
-                    <p>Visualisez les indicateurs clés de vos ressources humaines</p>
-                </div>
-                <div class="dashboard-container">
-                    <div class="dashboard-controls">
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="dashboard-mois">Mois de référence</label>
-                                <select id="dashboard-mois" name="dashboard-mois" required>
-                                    <option value="1">Janvier</option>
-                                    <option value="2">Février</option>
-                                    <option value="3">Mars</option>
-                                    <option value="4">Avril</option>
-                                    <option value="5">Mai</option>
-                                    <option value="6">Juin</option>
-                                    <option value="7">Juillet</option>
-                                    <option value="8">Août</option>
-                                    <option value="9">Septembre</option>
-                                    <option value="10">Octobre</option>
-                                    <option value="11">Novembre</option>
-                                    <option value="12">Décembre</option>
-                                </select>
-                            </div>
+                <!-- Section Simulation RH -->
+                <section id="rh-simulation" class="module-section">
+                    <div class="section-header">
+                        <h3><i class="fas fa-chart-line"></i> Simulation RH</h3>
+                        <p>Simulez différents scénarios de gestion des ressources humaines</p>
+                    </div>
+                    
+                    <!-- Simulation RH -->
+                    <div class="simulation-container">
+                        <div class="simulation-header">
+                            <h4><i class="fas fa-users"></i> Simulation RH - Masse Salariale</h4>
+                            <p>Analyse complète de la masse salariale avec règles légales, saisons et optimisation des ressources</p>
                         </div>
-                        <button type="button" id="generate-dashboard" class="btn btn-primary">
-                            <i class="fas fa-chart-bar"></i> Générer le tableau de bord
-                        </button>
+                        
+                        <div class="simulation-controls">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="simulation-service">Service</label>
+                                    <select id="simulation-service" name="simulation-service" required>
+                                        <option value="">Sélectionner un service...</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="simulation-employes">Employés</label>
+                                    <div class="custom-multiselect">
+                                        <div class="multiselect-header">
+                                            <span class="multiselect-placeholder">Sélectionner des employés...</span>
+                                            <i class="fas fa-chevron-down"></i>
+                                        </div>
+                                        <div class="multiselect-dropdown" style="display: none;">
+                                            <div class="multiselect-search">
+                                                <input type="text" placeholder="Rechercher un employé..." class="multiselect-search-input">
+                                            </div>
+                                            <div class="multiselect-options">
+                                                <!-- Les options seront ajoutées dynamiquement -->
+                                            </div>
+                                            <div class="multiselect-actions">
+                                                <button type="button" class="btn btn-sm btn-secondary multiselect-select-all">
+                                                    <i class="fas fa-check-double"></i> Tout sélectionner
+                                                </button>
+                                                <button type="button" class="btn btn-sm btn-secondary multiselect-clear-all">
+                                                    <i class="fas fa-times"></i> Tout effacer
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <div class="multiselect-selected">
+                                            <!-- Les employés sélectionnés apparaîtront ici -->
+                                        </div>
+                                    </div>
+                                    <small>Sélectionnez les employés à inclure dans la simulation</small>
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="simulation-periode">Période de simulation</label>
+                                    <select id="simulation-periode" name="simulation-periode" required>
+                                        <option value="1">1 mois</option>
+                                        <option value="3">3 mois (trimestre)</option>
+                                        <option value="6">6 mois (semestre)</option>
+                                        <option value="12" selected>12 mois (année)</option>
+                                    </select>
+                                    <small>Durée de la simulation</small>
+                                </div>
+                                <div class="form-group">
+                                    <label for="simulation-taux-charges">Taux charges sociales (%)</label>
+                                    <input type="number" id="simulation-taux-charges" name="simulation-taux-charges" min="0" max="100" value="25" step="0.1" required>
+                                    <small>Taux moyen des charges sociales</small>
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="simulation-view">Vue des employés</label>
+                                    <select id="simulation-view" name="simulation-view">
+                                        <option value="all">Tous les employés du service</option>
+                                        <option value="selected">Seulement les employés sélectionnés</option>
+                                    </select>
+                                    <small>Choisissez quels employés inclure</small>
+                                </div>
+                            </div>
+                            <button type="button" id="run-annual-simulation" class="btn btn-primary">
+                                <i class="fas fa-calculator"></i> Analyser la masse salariale
+                            </button>
+                        </div>
+                        
+                        <!-- Résultats de la simulation RH -->
+                        <div id="annual-simulation-results">
+                            <!-- Résultats de la simulation apparaîtront ici -->
+                        </div>
                     </div>
-                    <div id="dashboard-results" class="dashboard-results">
-                        <!-- Résultats du tableau de bord apparaîtront ici -->
-                    </div>
-                </div>
-            </section>
+                </section>
+
+
         </div>
     </main>
 
     <!-- Footer -->
     <footer class="main-footer">
-        <div class="footer-content">
+            <div class="footer-content">
             <p>&copy; 2024 GEST PREV - Plateforme modulaire de gestion prévisionnelle</p>
         </div>
     </footer>
@@ -642,4 +809,4 @@
     <script src="js/modules.js"></script>
     <script src="js/app.js"></script>
 </body>
-</html> 
+</html>
