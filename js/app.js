@@ -11,13 +11,13 @@ class GestPrev {
         // Créer des données de test si aucune donnée n'existe ou si les données sont vides
         if (this.services.length === 0 || this.employes.length === 0) {
             console.log('Création des données de test...');
-            this.createTestData();
-        }
+        this.createTestData();
+    }
     
-        // ===== VÉRIFICATION ET RESTAURATION DE LA CONFIGURATION =====
-        this.ensureDefaultConfiguration();
+    // ===== VÉRIFICATION ET RESTAURATION DE LA CONFIGURATION =====
+    this.ensureDefaultConfiguration();
     
-        this.setupEventListeners();
+                this.setupEventListeners();
         this.setupCheckboxHandlers();
         this.updateAllSelects();
         this.displayServices();
@@ -25,50 +25,50 @@ class GestPrev {
         
         // Initialiser l'affichage vide du planning
         this.initializePlanningDisplay();
-    }
+}
 
-    // ===== CONFIGURATION VERROUILLÉE =====
-    ensureDefaultConfiguration() {
-        // Vérifier et restaurer la configuration par défaut
-        const config = JSON.parse(localStorage.getItem('gestPrevConfig') || '{}');
-        
-        // S'assurer que le module RH est actif
-        const rhModule = document.getElementById('rh-module');
-        if (rhModule && !rhModule.classList.contains('active')) {
-            document.querySelectorAll('.module-content').forEach(module => {
-                module.classList.remove('active');
-            });
-            rhModule.classList.add('active');
-        }
-        
-        // S'assurer que la section Présentation est active
-        const presentationSection = document.getElementById('rh-presentation');
-        if (presentationSection && !presentationSection.classList.contains('active')) {
-            document.querySelectorAll('.module-section').forEach(section => {
-                section.classList.remove('active');
-            });
-            presentationSection.classList.add('active');
-        }
-        
-        // S'assurer que l'onglet Présentation est actif
-        const presentationTab = document.querySelector('[data-tab="rh-presentation"]');
-        if (presentationTab && !presentationTab.classList.contains('active')) {
-            document.querySelectorAll('.tab-btn').forEach(tab => {
-                tab.classList.remove('active');
-            });
-            presentationTab.classList.add('active');
-        }
-        
-        // Sauvegarder la configuration mise à jour
-        const updatedConfig = {
-            defaultModule: 'rh',
-            defaultSection: 'rh-presentation',
-            defaultTab: 'rh-presentation',
-            timestamp: Date.now(),
-            lastCheck: Date.now()
-        };
-        localStorage.setItem('gestPrevConfig', JSON.stringify(updatedConfig));
+// ===== CONFIGURATION VERROUILLÉE =====
+ensureDefaultConfiguration() {
+    // Vérifier et restaurer la configuration par défaut
+    const config = JSON.parse(localStorage.getItem('gestPrevConfig') || '{}');
+    
+    // S'assurer que le module RH est actif
+    const rhModule = document.getElementById('rh-module');
+    if (rhModule && !rhModule.classList.contains('active')) {
+        document.querySelectorAll('.module-content').forEach(module => {
+            module.classList.remove('active');
+        });
+        rhModule.classList.add('active');
     }
+    
+    // S'assurer que la section Présentation est active
+    const presentationSection = document.getElementById('rh-presentation');
+    if (presentationSection && !presentationSection.classList.contains('active')) {
+        document.querySelectorAll('.module-section').forEach(section => {
+            section.classList.remove('active');
+        });
+        presentationSection.classList.add('active');
+    }
+    
+    // S'assurer que l'onglet Présentation est actif
+    const presentationTab = document.querySelector('[data-tab="rh-presentation"]');
+    if (presentationTab && !presentationTab.classList.contains('active')) {
+        document.querySelectorAll('.tab-btn').forEach(tab => {
+            tab.classList.remove('active');
+        });
+        presentationTab.classList.add('active');
+    }
+    
+    // Sauvegarder la configuration mise à jour
+    const updatedConfig = {
+        defaultModule: 'rh',
+        defaultSection: 'rh-presentation',
+        defaultTab: 'rh-presentation',
+        timestamp: Date.now(),
+        lastCheck: Date.now()
+    };
+    localStorage.setItem('gestPrevConfig', JSON.stringify(updatedConfig));
+}
 
     // ===== PERSISTANCE DES DONNÉES =====
     loadFromLocalStorage() {
@@ -1832,16 +1832,16 @@ class GestPrev {
                         <div class="summary-item ${results.margeBrutePourcentage >= results.margeObjectif ? 'positive' : 'negative'}">
                             <span class="summary-label">Marge brute</span>
                             <span class="summary-value">${results.margeBrutePourcentage.toFixed(1)}%</span>
-                        </div>
+                    </div>
                         <div class="summary-item">
                             <span class="summary-label">Objectif</span>
                             <span class="summary-value">${results.margeObjectif}%</span>
-                        </div>
+                </div>
                         <div class="summary-item">
                             <span class="summary-label">Écart</span>
                             <span class="summary-value ${results.ecartMarge >= 0 ? 'positive' : 'negative'}">${results.ecartMarge.toFixed(0)}€</span>
-                        </div>
                     </div>
+                </div>
                 </div>
 
                 <div class="financial-grid">
@@ -1849,11 +1849,11 @@ class GestPrev {
                         <div class="card-header">
                             <i class="fas fa-euro-sign"></i>
                             <h5>Chiffre d'affaires</h5>
-                        </div>
+            </div>
                         <div class="card-content">
                             <div class="card-value">${results.caEstime.toLocaleString()}€</div>
                             <div class="card-period">sur ${periodeLabels[results.periode]}</div>
-                        </div>
+                </div>
                     </div>
 
                     <div class="financial-card costs">
@@ -2077,9 +2077,9 @@ class GestPrev {
                         ${Object.entries(data.employesParNiveau).map(([niveau, count]) => 
                             `<div class="level-item">${niveau}: ${count}</div>`
                         ).join('')}
+                </div>
                     </div>
                 </div>
-            </div>
         `;
     }
 
@@ -2109,7 +2109,7 @@ class GestPrev {
         notification.innerHTML = `
             <div class="notification-content">
                 <i class="${this.getNotificationIcon(type)}"></i>
-                <span>${message}</span>
+            <span>${message}</span>
             </div>
         `;
 
@@ -3560,4 +3560,4 @@ class GestPrev {
 const gestPrev = new GestPrev();
 document.addEventListener('DOMContentLoaded', () => {
     gestPrev.init();
-});
+}); 
