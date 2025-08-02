@@ -98,6 +98,7 @@
                 <button class="tab-btn active" data-tab="rh-presentation">Présentation</button>
                 <button class="tab-btn" data-tab="rh-services">Services</button>
                 <button class="tab-btn" data-tab="rh-employes">Employés</button>
+                <button class="tab-btn" data-tab="rh-planning">Planning</button>
                 <button class="tab-btn" data-tab="rh-configuration">Configuration</button>
                 <button class="tab-btn" data-tab="rh-simulation">Simulation</button>
                 </div>
@@ -565,8 +566,65 @@
                     </div>
                 </section>
 
-                <!-- Section Configuration RH -->
-                <section id="rh-configuration" class="module-section">
+                            <!-- Section Planning RH -->
+            <section id="rh-planning" class="module-section">
+                <div class="section-header">
+                    <h3><i class="fas fa-calendar-week"></i> Planning RH</h3>
+                    <p>Gérez les plannings hebdomadaires de vos équipes</p>
+                </div>
+                
+                <div class="planning-container">
+                    <div class="planning-controls">
+                        <div class="form-section">
+                            <h4><i class="fas fa-cog"></i> Paramètres du planning</h4>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="planning-service">Service</label>
+                                    <select id="planning-service" name="planning-service" required>
+                                        <option value="">Sélectionner un service...</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="planning-week">Semaine</label>
+                                    <input type="week" id="planning-week" name="planning-week" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="planning-test-quota">Quota de test (%)</label>
+                                    <input type="number" id="planning-test-quota" name="planning-test-quota" min="0" max="100" value="80" required>
+                                    <small>Pourcentage d'occupation pour les tests</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-section">
+                            <h4><i class="fas fa-users"></i> Sélection des employés</h4>
+                            <div class="employes-selector" id="planning-employes-selector">
+                                <!-- Les employés seront ajoutés dynamiquement -->
+                            </div>
+                        </div>
+
+                        <div class="form-actions">
+                            <button type="button" id="generate-planning" class="btn btn-primary">
+                                <i class="fas fa-magic"></i> Générer le planning
+                            </button>
+                            <button type="button" id="optimize-planning" class="btn btn-secondary">
+                                <i class="fas fa-chart-line"></i> Optimiser
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="planning-results" id="planning-results">
+                        <div class="planning-results-empty">
+                            <i class="fas fa-calendar-alt"></i>
+                            <p>Aucun planning généré</p>
+                            <small>Sélectionnez un service et des employés, puis cliquez sur "Générer le planning"</small>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Section Configuration RH -->
+            <section id="rh-configuration" class="module-section">
                     <div class="section-header">
                         <h3><i class="fas fa-cogs"></i> Configuration</h3>
                         <p>Configuration des règles légales et saisonnières pour la simulation</p>
