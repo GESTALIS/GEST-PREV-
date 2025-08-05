@@ -143,13 +143,7 @@
                         </div>
                         </div>
                         
-                        <!-- Bouton pour créer les données de test -->
-                        <div class="test-data-section">
-                            <button type="button" id="create-test-data" class="btn btn-secondary">
-                                <i class="fas fa-database"></i> Créer les données de test
-                            </button>
-                            <small>Cliquez ici si vous n'avez pas de données pour tester l'application</small>
-                        </div>
+
                     </div>
                 </section>
 
@@ -956,8 +950,49 @@
             console.log('🚀 EXÉCUTION IMMÉDIATE');
             updateTitlesNow();
             document.addEventListener('click', handleClickNow);
+            document.addEventListener('click', handleFermeButtonClick);
             console.log('✅ SOLUTION RADICALE APPLIQUÉE');
         });
+        
+        // Fonction pour les boutons Fermé
+        function handleFermeButtonClick(event) {
+            const button = event.target.closest('.ferme-btn');
+            if (!button) return;
+            
+            const day = button.dataset.day;
+            const season = button.dataset.season;
+            console.log('🖱️ Clic bouton Fermé:', day, season);
+            
+            if (button.classList.contains('active')) {
+                // Désactiver
+                button.classList.remove('active');
+                button.querySelector('span').textContent = 'Fermé';
+                button.querySelector('i').className = 'fas fa-lock';
+                
+                // Réactiver les inputs
+                const seasonDiv = button.closest('.season-hours-day');
+                const inputs = seasonDiv.querySelectorAll('input[type="time"]');
+                inputs.forEach(input => {
+                    input.disabled = false;
+                    input.style.opacity = '1';
+                });
+                console.log('🔓 Bouton désactivé:', day, season);
+            } else {
+                // Activer
+                button.classList.add('active');
+                button.querySelector('span').textContent = 'Ouvert';
+                button.querySelector('i').className = 'fas fa-unlock';
+                
+                // Désactiver les inputs
+                const seasonDiv = button.closest('.season-hours-day');
+                const inputs = seasonDiv.querySelectorAll('input[type="time"]');
+                inputs.forEach(input => {
+                    input.disabled = true;
+                    input.style.opacity = '0.5';
+                });
+                console.log('🔒 Bouton activé:', day, season);
+            }
+        }
         
         // Fallback immédiat si DOMContentLoaded déjà passé
         if (document.readyState === 'loading') {
@@ -966,6 +1001,7 @@
             console.log('⚡ DOM déjà prêt, exécution immédiate');
             updateTitlesNow();
             document.addEventListener('click', handleClickNow);
+            document.addEventListener('click', handleFermeButtonClick);
         }
     </script>
 </body>
