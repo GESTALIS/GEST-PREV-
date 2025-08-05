@@ -874,5 +874,99 @@
     <!-- Scripts -->
     <script src="js/modules.js"></script>
     <script src="js/app.js"></script>
+    <script src="EVENT-MANAGER.js"></script>
+    <script src="DATA-MANAGER.js"></script>
+    <script src="UI-MANAGER.js"></script>
+    <script src="FERME-BUTTON-MANAGER.js"></script>
+    <script src="HEURES-CALCUL-MANAGER.js"></script>
+    <script src="SERVICES-ASSIGNES-MANAGER.js"></script>
+    
+    <!-- SOLUTION RADICALE - NAVIGATION DIRECTE -->
+    <script>
+        console.log('🚀 SOLUTION RADICALE - Navigation directe');
+        
+        // Fonction immédiate pour modifier les titres
+        function updateTitlesNow() {
+            const titles = {
+                'Configuration des services': 'Services',
+                'Gestion des employés': 'Employés',
+                'Planning prévisionnel': 'Planning RH',
+                'Simulation RH': 'Simulation RH',
+                'Tableau de bord': 'Dashboard',
+                'Calculs automatiques': 'Configuration'
+            };
+            
+            document.querySelectorAll('.feature-card h4').forEach(title => {
+                const current = title.textContent.trim();
+                if (titles[current]) {
+                    title.textContent = titles[current];
+                    console.log('✅ Titre modifié:', current, '→', titles[current]);
+                }
+            });
+        }
+        
+        // Fonction immédiate pour naviguer
+        function navigateNow(sectionName) {
+            document.querySelectorAll('.module-section').forEach(s => s.style.display = 'none');
+            const target = document.getElementById(sectionName);
+            if (target) {
+                target.style.display = 'block';
+                target.scrollIntoView({ behavior: 'smooth' });
+                console.log('✅ Navigation vers:', sectionName);
+            }
+        }
+        
+        // Fonction immédiate pour gérer les clics
+        function handleClickNow(event) {
+            let card = event.target;
+            while (card && !card.classList.contains('feature-card')) {
+                card = card.parentElement;
+            }
+            
+            if (card && card.classList.contains('feature-card')) {
+                const title = card.querySelector('h4');
+                if (title) {
+                    const cardTitle = title.textContent.trim();
+                    console.log('🎯 Clic sur:', cardTitle);
+                    
+                    const navigation = {
+                        'Services': 'rh-services',
+                        'Configuration des services': 'rh-services',
+                        'Employés': 'rh-employes',
+                        'Gestion des employés': 'rh-employes',
+                        'Planning RH': 'rh-planning',
+                        'Planning prévisionnel': 'rh-planning',
+                        'Simulation RH': 'rh-simulation',
+                        'Dashboard': 'rh-dashboard',
+                        'Tableau de bord': 'rh-dashboard',
+                        'Configuration': 'rh-configuration',
+                        'Calculs automatiques': 'rh-configuration'
+                    };
+                    
+                    const targetSection = navigation[cardTitle];
+                    if (targetSection) {
+                        navigateNow(targetSection);
+                    }
+                }
+            }
+        }
+        
+        // EXÉCUTION IMMÉDIATE
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🚀 EXÉCUTION IMMÉDIATE');
+            updateTitlesNow();
+            document.addEventListener('click', handleClickNow);
+            console.log('✅ SOLUTION RADICALE APPLIQUÉE');
+        });
+        
+        // Fallback immédiat si DOMContentLoaded déjà passé
+        if (document.readyState === 'loading') {
+            console.log('⏳ DOM en cours de chargement...');
+        } else {
+            console.log('⚡ DOM déjà prêt, exécution immédiate');
+            updateTitlesNow();
+            document.addEventListener('click', handleClickNow);
+        }
+    </script>
 </body>
 </html>
