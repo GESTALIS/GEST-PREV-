@@ -423,6 +423,7 @@ ensureDefaultConfiguration() {
         this.updateAllSelects();
         
         this.showNotification('Données de test créées avec succès !', 'success');
+        this.showNotification('Services et employés de démonstration ajoutés', 'info');
     }
 
     // ===== GESTION DES ÉVÉNEMENTS =====
@@ -500,6 +501,16 @@ ensureDefaultConfiguration() {
         
         // Initialisation du sélecteur d'employés personnalisé
         this.setupCustomMultiselect();
+        
+        // Initialisation des nouvelles fonctionnalités employés
+        this.setupEmployeTypeHeuresHandler();
+        this.setupLegalRules35EventListeners();
+        this.initializeLegalRules35();
+        
+        // Test de notification au démarrage
+        setTimeout(() => {
+            this.showNotification('Application GEST PREV chargée avec succès !', 'success');
+        }, 1000);
         
         console.log('✅ Event listeners configurés');
     }
@@ -673,7 +684,7 @@ ensureDefaultConfiguration() {
         this.saveToLocalStorage();
         this.updateAllSelects();
         this.displayServices();
-        this.showNotification('Service supprimé', 'info');
+        this.showNotification('Service supprimé avec succès !', 'info');
     }
 
     editService(serviceId) {
@@ -722,7 +733,7 @@ ensureDefaultConfiguration() {
         // Afficher le formulaire
         this.showServiceForm();
         
-        this.showNotification('Service chargé pour modification', 'info');
+        this.showNotification('Service chargé pour modification avec succès !', 'info');
     }
 
     updateService(serviceId) {
@@ -928,9 +939,7 @@ ensureDefaultConfiguration() {
 
         if (cancelFormBtn) {
             cancelFormBtn.addEventListener('click', () => {
-                employeForm.style.display = 'none';
-                showFormBtn.style.display = 'block';
-                employeForm.reset();
+                this.cancelEmployeEdit();
             });
         }
 
@@ -963,6 +972,11 @@ ensureDefaultConfiguration() {
         const selectedServices = Array.from(form.querySelectorAll('input[name="employe-services"]:checked'))
             .map(checkbox => checkbox.value);
 
+        // Déterminer les heures contractuelles basées sur le type sélectionné
+        const typeHeures = formData.get('employe-type-heures');
+        const heuresContractuelles = typeHeures === '35' ? 1820 : 2028;
+        const heuresHebdo = typeHeures === '35' ? 35 : 39;
+
         const employe = {
             id: this.generateId(),
             nom: formData.get('employe-nom'),
@@ -976,12 +990,12 @@ ensureDefaultConfiguration() {
             
             // Capacité prévisionnelle
             disponibilite: {
-                heuresHebdoStandard: 39,
-                modulationAnnuelle: formData.get('employe-modulation') === 'on',
-                heuresAnnuelContractuelles: 2028,
+                heuresHebdoStandard: heuresHebdo,
+                modulationAnnuelle: true, // Toujours modulation pour les deux types
+                heuresAnnuelContractuelles: heuresContractuelles,
                 rttLegales: {
-                    congesPayes: parseInt(formData.get('employe-conges')),
-                    reposCompensateur: parseInt(formData.get('employe-rtt')),
+                    congesPayes: 25,
+                    reposCompensateur: 0,
                     joursFeries: 11
                 },
                 plafonds: {
@@ -993,7 +1007,6 @@ ensureDefaultConfiguration() {
             // Attribution prévisionnelle
             servicesAttribues: selectedServices,
             quotasParService: {},
-            priorite: parseInt(formData.get('employe-priorite')),
             
             createdAt: new Date().toISOString()
         };
@@ -1024,7 +1037,7 @@ ensureDefaultConfiguration() {
         }
         form.reset();
         
-        this.showNotification('Employé prévisionnel ajouté avec succès !', 'success');
+        this.showNotification('Employé ajouté avec succès !', 'success');
     }
 
     deleteEmploye(employeId) {
@@ -1032,7 +1045,202 @@ ensureDefaultConfiguration() {
         this.saveToLocalStorage();
         this.updateAllSelects();
         this.displayEmployes();
-        this.showNotification('Employé supprimé', 'info');
+        this.showNotification('Employé supprimé avec succès !', 'info');
+    }
+
+    editEmploye(employeId) {
+        const employe = this.employes.find(e => e.id === employeId);
+        if (!employe) {
+            this.showNotification('Employé non trouvé', 'error');
+            return;
+        }
+
+        // Afficher le formulaire
+        const form = document.getElementById('employe-form');
+        if (form) {
+            form.style.display = 'block';
+        }
+
+        // Remplir le formulaire avec les données de l'employé
+        const nomInput = document.getElementById('employe-nom');
+        const prenomInput = document.getElementById('employe-prenom');
+        const categorieInput = document.getElementById('employe-categorie');
+        const niveauInput = document.getElementById('employe-niveau');
+        const echelonInput = document.getElementById('employe-echelon');
+        const typeContratInput = document.getElementById('employe-type-contrat');
+        const typeHeuresInput = document.getElementById('employe-type-heures');
+        const tauxBrutInput = document.getElementById('employe-taux-brut');
+        const tauxChargesInput = document.getElementById('employe-taux-charges');
+
+        if (nomInput) nomInput.value = employe.nom || '';
+        if (prenomInput) prenomInput.value = employe.prenom || '';
+        if (categorieInput) categorieInput.value = employe.categorie || '';
+        if (niveauInput) niveauInput.value = employe.niveau || '';
+        if (echelonInput) echelonInput.value = employe.echelon || '';
+        if (typeContratInput) typeContratInput.value = employe.typeContrat || '';
+        if (tauxBrutInput) tauxBrutInput.value = employe.tauxHoraireBrut || '';
+        if (tauxChargesInput) tauxChargesInput.value = employe.tauxChargesPatronales || '';
+
+        // Déterminer le type d'heures basé sur les heures contractuelles
+        if (typeHeuresInput) {
+            const heuresContractuelles = employe.disponibilite?.heuresAnnuelContractuelles || 2028;
+            if (heuresContractuelles <= 1820) {
+                typeHeuresInput.value = '35';
+                this.toggleEmployeHoursConfig('35');
+            } else {
+                typeHeuresInput.value = '39';
+                this.toggleEmployeHoursConfig('39');
+            }
+        }
+
+        // Mettre à jour les services sélectionnés
+        this.updateServicesCheckboxes();
+        const servicesAttribues = employe.servicesAttribues || [];
+        servicesAttribues.forEach(serviceId => {
+            const checkbox = form.querySelector(`input[name="employe-services"][value="${serviceId}"]`);
+            if (checkbox) checkbox.checked = true;
+        });
+
+        // Changer le bouton pour "Modifier"
+        const submitBtn = form.querySelector('button[type="submit"]');
+        if (submitBtn) {
+            submitBtn.innerHTML = '<i class="fas fa-save"></i> Modifier l\'employé';
+            // Supprimer l'ancien event listener et en ajouter un nouveau
+            submitBtn.removeEventListener('click', this.addEmploye);
+            submitBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                this.updateEmploye(employeId);
+            });
+        }
+
+        // Masquer le bouton "Ajouter un employé"
+        const showFormBtn = document.getElementById('show-employe-form');
+        if (showFormBtn) {
+            showFormBtn.style.display = 'none';
+        }
+
+        // Ajouter un bouton "Annuler" pour l'édition
+        const cancelBtn = form.querySelector('#cancel-employe-form');
+        if (cancelBtn) {
+            cancelBtn.style.display = 'block';
+            cancelBtn.onclick = () => {
+                this.cancelEmployeEdit();
+            };
+        }
+
+        this.showNotification('Mode édition activé', 'info');
+    }
+
+    updateEmploye(employeId) {
+        const form = document.getElementById('employe-form');
+        const formData = new FormData(form);
+
+        // Récupération des services sélectionnés
+        const selectedServices = Array.from(form.querySelectorAll('input[name="employe-services"]:checked'))
+            .map(checkbox => checkbox.value);
+
+        const employeIndex = this.employes.findIndex(e => e.id === employeId);
+        if (employeIndex === -1) {
+            this.showNotification('Employé non trouvé', 'error');
+            return;
+        }
+
+        // Déterminer les heures contractuelles basées sur le type sélectionné
+        const typeHeures = formData.get('employe-type-heures');
+        const heuresContractuelles = typeHeures === '35' ? 1820 : 2028;
+
+        // Mettre à jour l'employé
+        this.employes[employeIndex] = {
+            ...this.employes[employeIndex],
+            nom: formData.get('employe-nom'),
+            prenom: formData.get('employe-prenom'),
+            categorie: formData.get('employe-categorie'),
+            niveau: formData.get('employe-niveau'),
+            echelon: formData.get('employe-echelon'),
+            typeContrat: formData.get('employe-type-contrat'),
+            tauxHoraireBrut: parseFloat(formData.get('employe-taux-brut')),
+            tauxChargesPatronales: parseFloat(formData.get('employe-taux-charges')),
+            servicesAttribues: selectedServices,
+            disponibilite: {
+                ...this.employes[employeIndex].disponibilite,
+                heuresAnnuelContractuelles: heuresContractuelles
+            },
+            updatedAt: new Date().toISOString()
+        };
+
+        // Validation des champs obligatoires
+        if (!this.employes[employeIndex].nom || !this.employes[employeIndex].prenom || 
+            !this.employes[employeIndex].categorie || !this.employes[employeIndex].niveau || 
+            !this.employes[employeIndex].typeContrat || !this.employes[employeIndex].tauxHoraireBrut) {
+            this.showNotification('Veuillez remplir tous les champs obligatoires', 'error');
+            return;
+        }
+
+        // Validation des services sélectionnés
+        if (selectedServices.length === 0) {
+            this.showNotification('Veuillez sélectionner au moins un service', 'error');
+            return;
+        }
+
+        this.saveToLocalStorage();
+        this.updateAllSelects();
+        this.displayEmployes();
+        
+        // Masquer le formulaire après modification
+        form.style.display = 'none';
+        const showFormBtn = document.getElementById('show-employe-form');
+        if (showFormBtn) {
+            showFormBtn.style.display = 'block';
+        }
+        form.reset();
+        
+        // Remettre le bouton en mode "Ajouter"
+        const submitBtn = form.querySelector('button[type="submit"]');
+        if (submitBtn) {
+            submitBtn.innerHTML = '<i class="fas fa-plus"></i> Ajouter l\'employé';
+            // Supprimer l'ancien event listener et en ajouter un nouveau
+            submitBtn.removeEventListener('click', this.updateEmploye);
+            submitBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                this.addEmploye();
+            });
+        }
+        
+        this.showNotification('Employé modifié avec succès !', 'success');
+    }
+
+    cancelEmployeEdit() {
+        const form = document.getElementById('employe-form');
+        if (form) {
+            form.style.display = 'none';
+            form.reset();
+        }
+
+        // Remettre le bouton en mode "Ajouter"
+        const submitBtn = form.querySelector('button[type="submit"]');
+        if (submitBtn) {
+            submitBtn.innerHTML = '<i class="fas fa-plus"></i> Ajouter l\'employé';
+            // Supprimer l'ancien event listener et en ajouter un nouveau
+            submitBtn.removeEventListener('click', this.updateEmploye);
+            submitBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                this.addEmploye();
+            });
+        }
+
+        // Afficher le bouton "Ajouter un employé"
+        const showFormBtn = document.getElementById('show-employe-form');
+        if (showFormBtn) {
+            showFormBtn.style.display = 'block';
+        }
+
+        // Masquer le bouton "Annuler"
+        const cancelBtn = form.querySelector('#cancel-employe-form');
+        if (cancelBtn) {
+            cancelBtn.style.display = 'none';
+        }
+
+        this.showNotification('Édition annulée avec succès !', 'info');
     }
 
     displayEmployes() {
@@ -1100,10 +1308,7 @@ ensureDefaultConfiguration() {
                                 <i class="fas fa-clock"></i>
                                 ${employe.disponibilite?.heuresAnnuelContractuelles || 2028}h/an
                             </div>
-                            <div class="employe-detail">
-                                <i class="fas fa-star"></i>
-                                Priorité ${employe.priorite || 3}
-                            </div>
+
                             <div class="employe-detail">
                                 <i class="fas fa-cogs"></i>
                                 ${servicesAttribues.length} service(s)
@@ -1116,10 +1321,10 @@ ensureDefaultConfiguration() {
                     </div>
                     
                     <div class="employe-actions">
-                        <button class="edit-btn" onclick="gestPrevApp.editEmploye('${employe.id}')" title="Modifier">
+                        <button class="edit-btn" onclick="gestPrev.editEmploye('${employe.id}')" title="Modifier">
                             <i class="fas fa-edit"></i>
                         </button>
-                        <button class="delete-btn" onclick="gestPrevApp.deleteEmploye('${employe.id}')" title="Supprimer">
+                        <button class="delete-btn" onclick="gestPrev.deleteEmploye('${employe.id}')" title="Supprimer">
                             <i class="fas fa-trash"></i>
                         </button>
                     </div>
@@ -1358,6 +1563,7 @@ ensureDefaultConfiguration() {
         }
         
         this.showNotification('Planning généré avec succès !', 'success');
+        this.showNotification('Planning affiché dans la timeline', 'info');
     }
 
     createWeeklyPlanning(service, weekInput, selectedEmployes) {
@@ -1661,6 +1867,7 @@ ensureDefaultConfiguration() {
     optimizePlanning() {
         // Logique d'optimisation automatique
         this.showNotification('Optimisation automatique en cours...', 'info');
+        this.showNotification('Analyse des charges et des coûts...', 'info');
         
         // Simuler l'optimisation
         setTimeout(() => {
@@ -1730,7 +1937,7 @@ ensureDefaultConfiguration() {
         const results = this.calculateAdvancedSimulation(periode, tauxCharges, caEstime, margeObjectif);
         this.displayFinancialSimulationResults(results);
         
-        this.showNotification('Analyse financière terminée !', 'success');
+        this.showNotification('Analyse financière terminée avec succès !', 'success');
     }
 
     calculateAdvancedSimulation(periode, tauxCharges, caEstime, margeObjectif) {
@@ -1992,7 +2199,7 @@ ensureDefaultConfiguration() {
         const data = this.calculateDashboardData(mois);
         this.displayDashboard(data);
         
-        this.showNotification('Tableau de bord généré !', 'success');
+        this.showNotification('Tableau de bord généré avec succès !', 'success');
     }
 
     calculateDashboardData(mois) {
@@ -2164,6 +2371,19 @@ ensureDefaultConfiguration() {
             content.classList.remove('active');
         });
         document.getElementById(`${module}-module`).classList.add('active');
+
+        // Notification de changement de module
+        const moduleNames = {
+            'rh': 'Ressources Humaines',
+            'financier': 'Financier',
+            'infrastructure': 'Infrastructure',
+            'commercial': 'Commercial',
+            'environnement': 'Environnement',
+            'operationnel': 'Opérationnel'
+        };
+        
+        const moduleName = moduleNames[module] || module;
+        this.showNotification(`Module ${moduleName} activé avec succès !`, 'info');
     }
 
     switchTab(tab) {
@@ -2178,6 +2398,20 @@ ensureDefaultConfiguration() {
             section.classList.remove('active');
         });
         document.getElementById(tab).classList.add('active');
+
+        // Notification de changement d'onglet
+        const tabNames = {
+            'rh-presentation': 'Présentation',
+            'rh-services': 'Services',
+            'rh-employes': 'Employés',
+            'rh-planning': 'Planning',
+            'rh-simulation': 'Simulation',
+            'rh-configuration': 'Configuration',
+            'rh-dashboard': 'Tableau de bord'
+        };
+        
+        const tabName = tabNames[tab] || tab;
+        this.showNotification(`Section ${tabName} activée avec succès !`, 'info');
     }
 
     setupPlanningEventListeners() {
@@ -2252,6 +2486,10 @@ ensureDefaultConfiguration() {
             return;
         }
 
+        // Notification de navigation
+        const directionText = direction > 0 ? 'suivante' : 'précédente';
+        this.showNotification(`Semaine ${directionText} sélectionnée !`, 'info');
+
         const [year, week] = weekInput.value.split('-W');
         let currentYear = parseInt(year);
         let currentWeek = parseInt(week);
@@ -2325,6 +2563,7 @@ ensureDefaultConfiguration() {
         URL.revokeObjectURL(url);
 
         this.showNotification('Planning exporté avec succès !', 'success');
+        this.showNotification('Fichier téléchargé automatiquement', 'info');
     }
 
     setupSimulationEventListeners() {
@@ -2425,6 +2664,8 @@ ensureDefaultConfiguration() {
     }
 
     setupLegalRulesEventListeners() {
+        console.log('🔧 Configuration des event listeners pour les règles légales...');
+        
         // Event listeners pour les champs modifiables
         const modifiableFields = [
             'rule-heures-jour', 'rule-heures-semaine', 'rule-max-jour', 
@@ -2445,23 +2686,34 @@ ensureDefaultConfiguration() {
         const resetRulesBtn = document.getElementById('reset-rules');
         const validateRulesBtn = document.getElementById('validate-rules');
 
+        console.log('🔍 Boutons trouvés:', {
+            saveRulesBtn: !!saveRulesBtn,
+            resetRulesBtn: !!resetRulesBtn,
+            validateRulesBtn: !!validateRulesBtn
+        });
+
         if (saveRulesBtn) {
             saveRulesBtn.addEventListener('click', () => {
+                console.log('💾 Clic sur Sauvegarder');
                 this.saveLegalRules();
             });
         }
 
         if (resetRulesBtn) {
             resetRulesBtn.addEventListener('click', () => {
+                console.log('🔄 Clic sur Restaurer');
                 this.resetLegalRules();
             });
         }
 
         if (validateRulesBtn) {
             validateRulesBtn.addEventListener('click', () => {
+                console.log('✅ Clic sur Valider');
                 this.validateLegalRules();
             });
         }
+
+        console.log('✅ Event listeners pour les règles légales configurés');
     }
 
     updateLegalRules() {
@@ -2484,7 +2736,7 @@ ensureDefaultConfiguration() {
 
     saveLegalRules() {
         localStorage.setItem('gestPrevLegalRules', JSON.stringify(this.legalRules));
-        this.showNotification('Règles légales sauvegardées !', 'success');
+        this.showNotification('Configuration 39h sauvegardée avec succès !', 'success');
     }
 
     resetLegalRules() {
@@ -2508,7 +2760,7 @@ ensureDefaultConfiguration() {
         
         this.updateLegalRulesFields();
         localStorage.removeItem('gestPrevLegalRules');
-        this.showNotification('Règles légales restaurées !', 'success');
+        this.showNotification('Configuration 39h restaurée avec succès !', 'info');
     }
 
     validateLegalRules() {
@@ -2538,7 +2790,7 @@ ensureDefaultConfiguration() {
         } else if (warnings.length > 0) {
             this.showNotification(`Avertissements : ${warnings.join(', ')}`,'warning');
         } else {
-            this.showNotification('Règles légales cohérentes !', 'success');
+            this.showNotification('Configuration 39h validée avec succès !', 'success');
         }
     }
 
@@ -2581,7 +2833,7 @@ ensureDefaultConfiguration() {
         
         this.displayAnnualTimeline(simulation);
         
-        this.showNotification('Analyse RH terminée !', 'success');
+        this.showNotification('Simulation RH terminée avec succès !', 'success');
     }
 
     calculateAnnualSimulation(service, viewType, periode = 12) {
@@ -3224,7 +3476,7 @@ ensureDefaultConfiguration() {
         link.download = `${filename}.csv`;
         link.click();
         
-        this.showNotification('Export CSV réussi !', 'success');
+        this.showNotification('Export CSV terminé avec succès !', 'success');
     }
     
     exportToJSON(data, filename) {
@@ -3236,7 +3488,7 @@ ensureDefaultConfiguration() {
         link.download = `${filename}.json`;
         link.click();
         
-        this.showNotification('Export JSON réussi !', 'success');
+        this.showNotification('Export JSON terminé avec succès !', 'success');
     }
 
     // ===== GESTION DES EMPLOYÉS DANS LA SIMULATION =====
@@ -3446,20 +3698,29 @@ ensureDefaultConfiguration() {
 
     selectAllMultiselectOptions(multiselect) {
         const options = multiselect.querySelectorAll('.multiselect-option');
+        let count = 0;
+        
         options.forEach(option => {
             const employeId = option.dataset.value;
             if (!this.isEmployeSelectedInMultiselect(multiselect, employeId)) {
                 this.addEmployeToMultiselect(multiselect, employeId);
                 option.classList.add('selected');
                 option.querySelector('input[type="checkbox"]').checked = true;
+                count++;
             }
         });
+        
         this.updateMultiselectSelectedDisplay(multiselect);
+        
+        if (count > 0) {
+            this.showNotification(`${count} employé(s) sélectionné(s) avec succès !`, 'info');
+        }
     }
 
     clearAllMultiselectOptions(multiselect) {
         const selectedContainer = multiselect.querySelector('.multiselect-selected');
         const options = multiselect.querySelectorAll('.multiselect-option');
+        const selectedCount = selectedContainer.querySelectorAll('.multiselect-tag').length;
         
         selectedContainer.innerHTML = '';
         options.forEach(option => {
@@ -3468,6 +3729,10 @@ ensureDefaultConfiguration() {
         });
         
         this.updateMultiselectSelectedDisplay(multiselect);
+        
+        if (selectedCount > 0) {
+            this.showNotification(`${selectedCount} employé(s) désélectionné(s) avec succès !`, 'info');
+        }
     }
 
     getSelectedEmployesFromMultiselect(multiselect) {
@@ -3554,6 +3819,239 @@ ensureDefaultConfiguration() {
         
         return alertes;
     }
+
+    // ===== NOUVELLES FONCTIONS POUR LES MODIFICATIONS EMPLOYÉS =====
+
+    // Gestion du sélecteur de type de contrat (35h/39h)
+    setupEmployeTypeHeuresHandler() {
+        const typeHeuresSelect = document.getElementById('employe-type-heures');
+        if (typeHeuresSelect) {
+            typeHeuresSelect.addEventListener('change', (e) => {
+                this.toggleEmployeHoursConfig(e.target.value);
+            });
+        }
+    }
+
+    // Basculer entre les configurations 35h et 39h
+    toggleEmployeHoursConfig(type) {
+        const config35h = document.getElementById('config-35h');
+        const config39h = document.getElementById('config-39h');
+        
+        if (type === '35') {
+            config35h.style.display = 'block';
+            config39h.style.display = 'none';
+            this.updateEmployeHoursFromConfig('35');
+        } else {
+            config35h.style.display = 'none';
+            config39h.style.display = 'block';
+            this.updateEmployeHoursFromConfig('39');
+        }
+    }
+
+    // Mettre à jour les heures employé depuis la configuration
+    updateEmployeHoursFromConfig(type) {
+        if (type === '35') {
+            // Récupérer les valeurs de la configuration 35h
+            const heuresJour = document.getElementById('rule-heures-jour-35')?.value || 7.0;
+            const heuresSemaine = document.getElementById('rule-heures-semaine-35')?.value || 35;
+            const heuresAn = document.getElementById('rule-heures-an-35')?.value || 1820;
+            const conges = document.getElementById('rule-conges-35')?.value || 25;
+            const rtt = document.getElementById('rule-rtt-35')?.value || 0;
+
+            // Mettre à jour les champs employé
+            const heuresAnInput = document.getElementById('employe-heures-annuel-35');
+            const congesInput = document.getElementById('employe-conges-35');
+            const rttInput = document.getElementById('employe-rtt-35');
+
+            if (heuresAnInput) heuresAnInput.value = heuresAn;
+            if (congesInput) congesInput.value = conges;
+            if (rttInput) rttInput.value = rtt;
+        } else {
+            // Récupérer les valeurs de la configuration 39h
+            const heuresJour = document.getElementById('rule-heures-jour')?.value || 7.8;
+            const heuresSemaine = document.getElementById('rule-heures-semaine')?.value || 39;
+            const heuresAn = document.getElementById('rule-heures-an')?.value || 2028;
+            const conges = document.getElementById('rule-conges')?.value || 25;
+            const rtt = document.getElementById('rule-rtt')?.value || 0;
+
+            // Mettre à jour les champs employé
+            const heuresAnInput = document.getElementById('employe-heures-annuel-39');
+            const congesInput = document.getElementById('employe-conges-39');
+            const rttInput = document.getElementById('employe-rtt-39');
+
+            if (heuresAnInput) heuresAnInput.value = heuresAn;
+            if (congesInput) congesInput.value = conges;
+            if (rttInput) rttInput.value = rtt;
+        }
+    }
+
+    // Initialiser les règles légales pour 35h
+    initializeLegalRules35() {
+        // Configuration par défaut pour 35h
+        const defaultRules35 = {
+            heuresJour: 7.0,
+            heuresSemaine: 35,
+            heuresMois: 151.67,
+            heuresAn: 1820,
+            maxJour: 10,
+            maxSemaine: 48,
+            heuresSup: 220,
+            conges: 25,
+            repos: 24
+        };
+
+        // Charger depuis localStorage ou utiliser les valeurs par défaut
+        const savedRules35 = localStorage.getItem('gestPrevLegalRules35');
+        const rules35 = savedRules35 ? JSON.parse(savedRules35) : defaultRules35;
+
+        // Mettre à jour les champs
+        Object.keys(rules35).forEach(key => {
+            const element = document.getElementById(`rule-${key}-35`);
+            if (element) {
+                element.value = rules35[key];
+            }
+        });
+
+        // Calculer les valeurs dérivées
+        this.calculateDerivedRules35();
+    }
+
+    // Calculer les valeurs dérivées pour 35h
+    calculateDerivedRules35() {
+        const heuresJour = parseFloat(document.getElementById('rule-heures-jour-35')?.value || 7.0);
+        const heuresSemaine = parseFloat(document.getElementById('rule-heures-semaine-35')?.value || 35);
+
+        // Calculer heures/mois (35h × 52 semaines ÷ 12 mois)
+        const heuresMois = (heuresSemaine * 52) / 12;
+        const heuresAn = heuresSemaine * 52;
+
+        // Mettre à jour les champs calculés
+        const heuresMoisElement = document.getElementById('rule-heures-mois-35');
+        const heuresAnElement = document.getElementById('rule-heures-an-35');
+
+        if (heuresMoisElement) heuresMoisElement.value = heuresMois.toFixed(2);
+        if (heuresAnElement) heuresAnElement.value = heuresAn;
+    }
+
+    // Sauvegarder les règles légales 35h
+    saveLegalRules35() {
+        const rules35 = {
+            heuresJour: parseFloat(document.getElementById('rule-heures-jour-35')?.value || 7.0),
+            heuresSemaine: parseFloat(document.getElementById('rule-heures-semaine-35')?.value || 35),
+            heuresMois: parseFloat(document.getElementById('rule-heures-mois-35')?.value || 151.67),
+            heuresAn: parseFloat(document.getElementById('rule-heures-an-35')?.value || 1820),
+            maxJour: parseInt(document.getElementById('rule-max-jour-35')?.value || 10),
+            maxSemaine: parseInt(document.getElementById('rule-max-semaine-35')?.value || 48),
+            heuresSup: parseInt(document.getElementById('rule-heures-sup-35')?.value || 220),
+            conges: parseInt(document.getElementById('rule-conges-35')?.value || 25),
+            repos: parseInt(document.getElementById('rule-repos-35')?.value || 24)
+        };
+
+        localStorage.setItem('gestPrevLegalRules35', JSON.stringify(rules35));
+        this.showNotification('Configuration 35h sauvegardée avec succès !', 'success');
+    }
+
+    // Event listeners pour les règles légales 35h
+    setupLegalRules35EventListeners() {
+        // Sauvegarder
+        const saveBtn35 = document.getElementById('save-rules-35');
+        if (saveBtn35) {
+            saveBtn35.addEventListener('click', () => {
+                this.saveLegalRules35();
+            });
+        }
+
+        // Restaurer
+        const resetBtn35 = document.getElementById('reset-rules-35');
+        if (resetBtn35) {
+            resetBtn35.addEventListener('click', () => {
+                this.resetLegalRules35();
+            });
+        }
+
+        // Valider
+        const validateBtn35 = document.getElementById('validate-rules-35');
+        if (validateBtn35) {
+            validateBtn35.addEventListener('click', () => {
+                this.validateLegalRules35();
+            });
+        }
+
+        // Calcul automatique lors de la modification des champs
+        const calculableFields35 = [
+            'rule-heures-jour-35',
+            'rule-heures-semaine-35'
+        ];
+
+        calculableFields35.forEach(fieldId => {
+            const field = document.getElementById(fieldId);
+            if (field) {
+                field.addEventListener('input', () => {
+                    this.calculateDerivedRules35();
+                });
+            }
+        });
+    }
+
+    // Restaurer les règles légales 35h
+    resetLegalRules35() {
+        const defaultRules35 = {
+            heuresJour: 7.0,
+            heuresSemaine: 35,
+            heuresMois: 151.67,
+            heuresAn: 1820,
+            maxJour: 10,
+            maxSemaine: 48,
+            heuresSup: 220,
+            conges: 25,
+            repos: 24
+        };
+
+        Object.keys(defaultRules35).forEach(key => {
+            const element = document.getElementById(`rule-${key}-35`);
+            if (element) {
+                element.value = defaultRules35[key];
+            }
+        });
+
+        this.calculateDerivedRules35();
+        this.showNotification('Configuration 35h restaurée avec succès !', 'info');
+    }
+
+    // Valider les règles légales 35h
+    validateLegalRules35() {
+        const heuresJour = parseFloat(document.getElementById('rule-heures-jour-35')?.value || 0);
+        const heuresSemaine = parseFloat(document.getElementById('rule-heures-semaine-35')?.value || 0);
+        const maxJour = parseInt(document.getElementById('rule-max-jour-35')?.value || 0);
+        const maxSemaine = parseInt(document.getElementById('rule-max-semaine-35')?.value || 0);
+
+        const errors = [];
+
+        if (heuresJour <= 0 || heuresJour > 12) {
+            errors.push('Heures/jour doit être entre 0 et 12');
+        }
+
+        if (heuresSemaine !== 35) {
+            errors.push('Heures/semaine doit être exactement 35 pour ce type de contrat');
+        }
+
+        if (maxJour < heuresJour) {
+            errors.push('Maximum heures/jour doit être supérieur aux heures/jour');
+        }
+
+        if (maxSemaine < heuresSemaine) {
+            errors.push('Maximum heures/semaine doit être supérieur aux heures/semaine');
+        }
+
+        if (errors.length > 0) {
+            this.showNotification('Erreurs de validation : ' + errors.join(', '), 'error');
+            return false;
+        }
+
+        this.showNotification('Configuration 35h validée avec succès !', 'success');
+        return true;
+    }
+
 }
 
 // Initialisation

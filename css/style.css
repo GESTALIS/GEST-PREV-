@@ -3130,3 +3130,231 @@ select[multiple] option:hover {
         gap: 1rem;
     }
 }
+
+/* ===== NOUVELLES STYLES POUR LES MODIFICATIONS EMPLOYÉS ===== */
+
+/* Configuration des heures employé */
+.hours-config {
+    background: var(--white);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 1.5rem;
+    margin: 1rem 0;
+    box-shadow: var(--shadow);
+}
+
+.hours-config h5 {
+    color: var(--primary-color);
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.hours-config h5 i {
+    color: var(--secondary-color);
+}
+
+/* Sélecteur de type de contrat */
+#employe-type-heures {
+    background: var(--white);
+    border: 2px solid var(--border-color);
+    border-radius: 6px;
+    padding: 0.75rem;
+    font-size: 1rem;
+    color: var(--dark-gray);
+    transition: all 0.3s ease;
+    width: 100%;
+}
+
+#employe-type-heures:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(0, 75, 93, 0.1);
+    outline: none;
+}
+
+#employe-type-heures option {
+    padding: 0.5rem;
+}
+
+/* Configuration 35h et 39h */
+#config-35h,
+#config-39h {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-left: 4px solid var(--primary-color);
+    border-radius: 8px;
+    padding: 1.5rem;
+    margin: 1rem 0;
+    transition: all 0.3s ease;
+}
+
+#config-35h:hover,
+#config-39h:hover {
+    box-shadow: var(--shadow-hover);
+    transform: translateY(-2px);
+}
+
+#config-35h h5 {
+    color: #28a745;
+}
+
+#config-39h h5 {
+    color: var(--secondary-color);
+}
+
+/* Champs en lecture seule */
+.hours-config input[readonly] {
+    background-color: #f8f9fa;
+    color: var(--medium-gray);
+    cursor: not-allowed;
+    border: 1px solid #dee2e6;
+}
+
+.hours-config input[readonly]:focus {
+    border-color: #dee2e6;
+    box-shadow: none;
+}
+
+/* Petits textes d'aide */
+.hours-config small {
+    color: var(--medium-gray);
+    font-size: 0.85rem;
+    font-style: italic;
+    display: block;
+    margin-top: 0.25rem;
+}
+
+/* Animation de transition entre les configurations */
+.hours-config {
+    transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.hours-config[style*="display: none"] {
+    opacity: 0;
+    transform: translateY(-10px);
+}
+
+/* Responsive pour les configurations d'heures */
+@media (max-width: 768px) {
+    .hours-config {
+        padding: 1rem;
+    }
+    
+    .hours-config h5 {
+        font-size: 1rem;
+    }
+    
+    #config-35h,
+    #config-39h {
+        padding: 1rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .hours-config {
+        padding: 0.75rem;
+    }
+    
+    #employe-type-heures {
+        font-size: 0.9rem;
+        padding: 0.5rem;
+    }
+}
+
+/* ===== NOTIFICATIONS ===== */
+.notification {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 10000;
+    background: var(--white);
+    border-radius: 8px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+    padding: 1rem 1.5rem;
+    min-width: 300px;
+    max-width: 400px;
+    transform: translateX(100%);
+    transition: transform 0.3s ease;
+    border-left: 4px solid var(--primary-color);
+}
+
+.notification.show {
+    transform: translateX(0);
+}
+
+.notification-content {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.notification-content i {
+    font-size: 1.2rem;
+    flex-shrink: 0;
+}
+
+.notification-content span {
+    font-size: 0.95rem;
+    font-weight: 500;
+    line-height: 1.4;
+}
+
+/* Types de notifications */
+.notification-success {
+    border-left-color: #28a745;
+}
+
+.notification-success .notification-content i {
+    color: #28a745;
+}
+
+.notification-error {
+    border-left-color: #dc3545;
+}
+
+.notification-error .notification-content i {
+    color: #dc3545;
+}
+
+.notification-warning {
+    border-left-color: #ffc107;
+}
+
+.notification-warning .notification-content i {
+    color: #ffc107;
+}
+
+.notification-info {
+    border-left-color: #17a2b8;
+}
+
+.notification-info .notification-content i {
+    color: #17a2b8;
+}
+
+/* Responsive pour les notifications */
+@media (max-width: 768px) {
+    .notification {
+        top: 10px;
+        right: 10px;
+        left: 10px;
+        min-width: auto;
+        max-width: none;
+    }
+}
+
+@media (max-width: 480px) {
+    .notification {
+        padding: 0.75rem 1rem;
+    }
+    
+    .notification-content {
+        gap: 0.5rem;
+    }
+    
+    .notification-content span {
+        font-size: 0.9rem;
+    }
+}

@@ -449,9 +449,11 @@
                                     <label for="employe-niveau">Niveau</label>
                                     <select id="employe-niveau" name="employe-niveau" required>
                                         <option value="">Sélectionner...</option>
-                                        <option value="debutant">Débutant</option>
-                                        <option value="confirme">Confirmé</option>
-                                        <option value="expert">Expert</option>
+                                        <option value="I">I - Débutant</option>
+                                        <option value="II">II - Confirmé</option>
+                                        <option value="III">III - Expert</option>
+                                        <option value="IV">IV - Senior</option>
+                                        <option value="V">V - Expert Senior</option>
                                     </select>
                                 </div>
                             </div>
@@ -495,27 +497,41 @@
                         
                         <div class="form-section">
                             <h4><i class="fas fa-clock"></i> Capacité prévisionnelle</h4>
+                            
+                            <!-- Sélecteur de type de contrat -->
                             <div class="form-row">
                                 <div class="form-group">
-                                    <label for="employe-modulation">
-                                        <input type="checkbox" id="employe-modulation" name="employe-modulation" checked>
-                                        Contrat modulation annuelle (39h/sem)
-                                    </label>
-                                </div>
-                                <div class="form-group">
-                                    <label for="employe-heures-annuel">Heures contractuelles annuelles</label>
-                                    <input type="number" id="employe-heures-annuel" name="employe-heures-annuel" value="2028" min="0" readonly>
-                                    <small>39h × 52 semaines = 2,028h/an</small>
+                                    <label for="employe-type-heures">Type de contrat</label>
+                                    <select id="employe-type-heures" name="employe-type-heures" required>
+                                        <option value="35">35h/semaine (modulation)</option>
+                                        <option value="39" selected>39h/semaine (modulation)</option>
+                                    </select>
                                 </div>
                             </div>
-                            <div class="form-row">
-                                <div class="form-group">
-                                    <label for="employe-conges">Congés payés (jours/an)</label>
-                                    <input type="number" id="employe-conges" name="employe-conges" value="25" min="0" max="35">
+                            
+                            <!-- Configuration 35h -->
+                            <div id="config-35h" class="hours-config" style="display: none;">
+                                <h5><i class="fas fa-clock"></i> Configuration 35h/semaine</h5>
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label for="employe-heures-annuel-35">Heures contractuelles annuelles</label>
+                                        <input type="number" id="employe-heures-annuel-35" name="employe-heures-annuel-35" value="1820" min="0" readonly>
+                                        <small>35h × 52 semaines = 1,820h/an</small>
+                                    </div>
+
                                 </div>
-                                <div class="form-group">
-                                    <label for="employe-rtt">RTT (jours/an)</label>
-                                    <input type="number" id="employe-rtt" name="employe-rtt" value="0" min="0" max="20">
+                            </div>
+                            
+                            <!-- Configuration 39h -->
+                            <div id="config-39h" class="hours-config">
+                                <h5><i class="fas fa-clock"></i> Configuration 39h/semaine (modulation)</h5>
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label for="employe-heures-annuel-39">Heures contractuelles annuelles</label>
+                                        <input type="number" id="employe-heures-annuel-39" name="employe-heures-annuel-39" value="2028" min="0" readonly>
+                                        <small>39h × 52 semaines = 2,028h/an</small>
+                                    </div>
+
                                 </div>
                             </div>
                         </div>
@@ -530,18 +546,7 @@
                                     </div>
                                 </div>
                             </div>
-                            <div class="form-row">
-                                <div class="form-group">
-                                    <label for="employe-priorite">Priorité d'attribution (1-5)</label>
-                                    <select id="employe-priorite" name="employe-priorite" required>
-                                        <option value="1">1 - Très haute</option>
-                                        <option value="2" selected>2 - Haute</option>
-                                        <option value="3">3 - Moyenne</option>
-                                        <option value="4">4 - Basse</option>
-                                        <option value="5">5 - Très basse</option>
-                                    </select>
-                                </div>
-                            </div>
+
                         </div>
                         
                         <div class="form-actions">
@@ -560,37 +565,37 @@
                     </div>
                 </section>
 
-                            <!-- Section Planning RH -->
-            <section id="rh-planning" class="module-section">
-                <div class="section-header">
+                <!-- Section Planning RH -->
+                <section id="rh-planning" class="module-section">
+                    <div class="section-header">
                     <h3><i class="fas fa-calendar-week"></i> Planning RH</h3>
                     <p>Gérez les plannings hebdomadaires de vos équipes</p>
-                </div>
-                
-                <div class="planning-container">
-                    <div class="planning-controls">
-                        <div class="form-section">
+                    </div>
+                    
+                    <div class="planning-container">
+                        <div class="planning-controls">
+                            <div class="form-section">
                             <h4><i class="fas fa-cog"></i> Paramètres du planning</h4>
-                            <div class="form-row">
-                                <div class="form-group">
-                                    <label for="planning-service">Service</label>
-                                    <select id="planning-service" name="planning-service" required>
-                                        <option value="">Sélectionner un service...</option>
-                                    </select>
-                                </div>
-                                <div class="form-group">
-                                    <label for="planning-week">Semaine</label>
-                                    <div class="week-selector">
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label for="planning-service">Service</label>
+                                        <select id="planning-service" name="planning-service" required>
+                                            <option value="">Sélectionner un service...</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="planning-week">Semaine</label>
+                                        <div class="week-selector">
                                         <button type="button" class="btn-week" id="prev-week">
-                                            <i class="fas fa-chevron-left"></i>
-                                        </button>
+                                                <i class="fas fa-chevron-left"></i>
+                                            </button>
                                         <input type="week" id="planning-week" name="planning-week" required>
                                         <button type="button" class="btn-week" id="next-week">
-                                            <i class="fas fa-chevron-right"></i>
-                                        </button>
+                                                <i class="fas fa-chevron-right"></i>
+                                            </button>
                                     </div>
                                 </div>
-                                <div class="form-group">
+                                    <div class="form-group">
                                     <label for="planning-test-quota">Quota de test (%)</label>
                                     <input type="number" id="planning-test-quota" name="planning-test-quota" min="0" max="100" value="80" required>
                                     <small>Pourcentage d'occupation pour les tests</small>
@@ -602,16 +607,16 @@
                             <h4><i class="fas fa-users"></i> Sélection des employés</h4>
                             <div class="employes-selector" id="planning-employes-selector">
                                 <!-- Les employés seront ajoutés dynamiquement -->
+                                </div>
                             </div>
-                        </div>
-
-                        <div class="form-actions">
-                            <button type="button" id="generate-planning" class="btn btn-primary">
-                                <i class="fas fa-magic"></i> Générer le planning
-                            </button>
-                            <button type="button" id="optimize-planning" class="btn btn-secondary">
+                            
+                            <div class="form-actions">
+                                <button type="button" id="generate-planning" class="btn btn-primary">
+                                    <i class="fas fa-magic"></i> Générer le planning
+                                </button>
+                                <button type="button" id="optimize-planning" class="btn btn-secondary">
                                 <i class="fas fa-chart-line"></i> Optimiser
-                            </button>
+                                </button>
                         </div>
                     </div>
 
@@ -632,11 +637,11 @@
                         <p>Configuration des règles légales et saisonnières pour la simulation</p>
                     </div>
                     
-                    <!-- Configuration des règles légales -->
+                    <!-- Configuration des règles légales - 39h -->
                     <div class="legal-rules-container">
                         <div class="rules-header">
-                            <h4><i class="fas fa-gavel"></i> Configuration des règles légales</h4>
-                            <small>Code du Travail & Convention Collective Hôtellerie-Restauration</small>
+                            <h4><i class="fas fa-gavel"></i> Configuration des règles légales - 39h</h4>
+                            <small>Code du Travail & Convention Collective Hôtellerie-Restauration (39h/semaine)</small>
                         </div>
                         <div class="rules-content">
                             <div class="rules-section">
@@ -712,9 +717,92 @@
                             <button type="button" id="validate-rules" class="btn btn-primary">
                                 <i class="fas fa-check"></i> Valider
                             </button>
+                            </div>
+                        </div>
+                        
+                    <!-- Configuration des règles légales - 35h -->
+                    <div class="legal-rules-container">
+                        <div class="rules-header">
+                            <h4><i class="fas fa-gavel"></i> Configuration des règles légales - 35h</h4>
+                            <small>Code du Travail & Convention Collective Hôtellerie-Restauration (35h/semaine)</small>
+                        </div>
+                        <div class="rules-content">
+                            <div class="rules-section">
+                                <h5><i class="fas fa-clock"></i> Règles de temps de travail</h5>
+                                <div class="rules-grid">
+                                    <div class="rule-item">
+                                        <label for="rule-heures-jour-35">Heures/jour</label>
+                                        <input type="number" id="rule-heures-jour-35" step="0.1" value="7.0">
+                                        <small>Heures par jour de travail</small>
+                                    </div>
+                                    <div class="rule-item">
+                                        <label for="rule-heures-semaine-35">Heures/semaine</label>
+                                        <input type="number" id="rule-heures-semaine-35" value="35">
+                                        <small>Heures par semaine (35h standard)</small>
+                                    </div>
+                                    <div class="rule-item">
+                                        <label for="rule-heures-mois-35">Heures/mois</label>
+                                        <input type="number" id="rule-heures-mois-35" readonly value="151.67">
+                                        <small>Calculé automatiquement</small>
+                                    </div>
+                                    <div class="rule-item">
+                                        <label for="rule-heures-an-35">Heures/an</label>
+                                        <input type="number" id="rule-heures-an-35" readonly value="1820">
+                                        <small>Calculé automatiquement</small>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="rules-section">
+                                <h5><i class="fas fa-exclamation-triangle"></i> Limites légales</h5>
+                                <div class="rules-grid">
+                                    <div class="rule-item">
+                                        <label for="rule-max-jour-35">Max heures/jour</label>
+                                        <input type="number" id="rule-max-jour-35" value="10">
+                                        <small>Maximum légal par jour</small>
+                                    </div>
+                                    <div class="rule-item">
+                                        <label for="rule-max-semaine-35">Max heures/semaine</label>
+                                        <input type="number" id="rule-max-semaine-35" value="48">
+                                        <small>Maximum légal par semaine</small>
+                                    </div>
+                                    <div class="rule-item">
+                                        <label for="rule-heures-sup-35">Heures supplémentaires</label>
+                                        <input type="number" id="rule-heures-sup-35" value="220">
+                                        <small>Limite annuelle</small>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="rules-section">
+                                <h5><i class="fas fa-umbrella-beach"></i> Congés et repos</h5>
+                                <div class="rules-grid">
+                                    <div class="rule-item">
+                                        <label for="rule-conges-35">Congés payés (jours)</label>
+                                        <input type="number" id="rule-conges-35" value="25">
+                                        <small>Jours de congés payés</small>
+                                    </div>
+                                    <div class="rule-item">
+                                        <label for="rule-repos-35">Repos hebdomadaire (h)</label>
+                                        <input type="number" id="rule-repos-35" value="24">
+                                        <small>Heures de repos consécutives</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="rules-actions">
+                            <button type="button" id="save-rules-35" class="btn btn-success">
+                                <i class="fas fa-save"></i> Sauvegarder
+                            </button>
+                            <button type="button" id="reset-rules-35" class="btn btn-secondary">
+                                <i class="fas fa-undo"></i> Restaurer
+                            </button>
+                            <button type="button" id="validate-rules-35" class="btn btn-primary">
+                                <i class="fas fa-check"></i> Valider
+                            </button>
                         </div>
                     </div>
-
+                        
                     <!-- Configuration saisonnière (Guyane Zone A) -->
                     <div class="seasons-container">
                         <div class="seasons-header">
@@ -766,8 +854,8 @@
                 <!-- Section Simulation RH -->
                 <section id="rh-simulation" class="module-section">
                     <div class="section-header">
-                        <h3><i class="fas fa-chart-line"></i> Simulation RH</h3>
-                        <p>Simulez différents scénarios de gestion des ressources humaines</p>
+                    <h3><i class="fas fa-chart-line"></i> Simulation RH</h3>
+                    <p>Simulez différents scénarios de gestion des ressources humaines</p>
                     </div>
                     
                     <!-- Simulation RH -->
@@ -815,15 +903,15 @@
                                     <small>Sélectionnez les employés à inclure dans la simulation</small>
                                 </div>
                             </div>
-                            <div class="form-row">
-                                <div class="form-group">
-                                    <label for="simulation-periode">Période de simulation</label>
-                                    <select id="simulation-periode" name="simulation-periode" required>
-                                        <option value="1">1 mois</option>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="simulation-periode">Période de simulation</label>
+                                <select id="simulation-periode" name="simulation-periode" required>
+                                    <option value="1">1 mois</option>
                                         <option value="3">3 mois (trimestre)</option>
                                         <option value="6">6 mois (semestre)</option>
                                         <option value="12" selected>12 mois (année)</option>
-                                    </select>
+                                </select>
                                     <small>Durée de la simulation</small>
                                 </div>
                                 <div class="form-group">
@@ -833,7 +921,7 @@
                                 </div>
                             </div>
                             <div class="form-row">
-                                <div class="form-group">
+                            <div class="form-group">
                                     <label for="simulation-view">Vue des employés</label>
                                     <select id="simulation-view" name="simulation-view">
                                         <option value="all">Tous les employés du service</option>
