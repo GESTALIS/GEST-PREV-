@@ -84,6 +84,11 @@ class GestPrev {
         };
         
         if (validCredentials[username] && validCredentials[username] === password) {
+            // Nettoyer l'état précédent
+            this.services = [];
+            this.employes = [];
+            this.planning = [];
+            
             // Créer un token d'authentification
             const authData = {
                 username: username,
@@ -127,13 +132,23 @@ class GestPrev {
             this.showNotification('Connexion réussie ! Bienvenue dans GEST PREV.', 'success');
         } else {
             this.showNotification('Identifiants incorrects. Veuillez réessayer.', 'error');
+            
+            // Vider le champ mot de passe en cas d'erreur
+            const passwordField = document.getElementById('password');
+            if (passwordField) passwordField.value = '';
         }
     }
 
     logout() {
+        // Nettoyer complètement l'authentification
         localStorage.removeItem('gestPrevAuth');
         this.isAuthenticated = false;
         document.body.classList.remove('authenticated');
+        
+        // Réinitialiser l'état de l'application
+        this.services = [];
+        this.employes = [];
+        this.planning = [];
         
         // Afficher l'overlay d'authentification
         const authOverlay = document.getElementById('auth-overlay');
@@ -147,7 +162,33 @@ class GestPrev {
             mainHeader.style.display = 'none';
         }
         
+        // Masquer tous les modules
+        document.querySelectorAll('.module-content').forEach(module => {
+            module.classList.remove('active');
+        });
+        
+        // Masquer toutes les sections
+        document.querySelectorAll('.module-section').forEach(section => {
+            section.classList.remove('active');
+        });
+        
+        // Masquer tous les onglets
+        document.querySelectorAll('.tab-btn').forEach(tab => {
+            tab.classList.remove('active');
+        });
+        
+        // Vider les champs de connexion
+        const usernameField = document.getElementById('username');
+        const passwordField = document.getElementById('password');
+        if (usernameField) usernameField.value = '';
+        if (passwordField) passwordField.value = '';
+        
         this.showNotification('Déconnexion réussie.', 'info');
+        
+        // Forcer la vérification d'authentification
+        setTimeout(() => {
+            this.checkAuthentication();
+        }, 100);
     }
 
     // ===== CONFIGURATION VERROUILLÉE =====
