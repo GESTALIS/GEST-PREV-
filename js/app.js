@@ -3,21 +3,30 @@ class GestPrev {
         this.services = [];
         this.employes = [];
         this.planning = [];
+        this.isAuthenticated = false;
     }
 
     init() {
+        // Vérifier l'authentification d'abord
+        this.checkAuthentication();
+        
+        if (!this.isAuthenticated) {
+            this.setupAuthentication();
+            return;
+        }
+        
         this.loadFromLocalStorage();
     
         // Créer des données de test si aucune donnée n'existe ou si les données sont vides
         if (this.services.length === 0 || this.employes.length === 0) {
             console.log('Création des données de test...');
-        this.createTestData();
-    }
+            this.createTestData();
+        }
     
-    // ===== VÉRIFICATION ET RESTAURATION DE LA CONFIGURATION =====
-    this.ensureDefaultConfiguration();
+        // ===== VÉRIFICATION ET RESTAURATION DE LA CONFIGURATION =====
+        this.ensureDefaultConfiguration();
     
-                this.setupEventListeners();
+        this.setupEventListeners();
         this.setupCheckboxHandlers();
         this.updateAllSelects();
         this.displayServices();
@@ -25,10 +34,124 @@ class GestPrev {
         
         // Initialiser l'affichage vide du planning
         this.initializePlanningDisplay();
-}
+    }
 
-// ===== CONFIGURATION VERROUILLÉE =====
-ensureDefaultConfiguration() {
+    // ===== AUTHENTIFICATION =====
+    checkAuthentication() {
+        const authToken = localStorage.getItem('gestPrevAuth');
+        if (authToken) {
+            try {
+                const authData = JSON.parse(authToken);
+                const now = Date.now();
+                // Token valide pendant 24h
+                if (authData.expires > now) {
+                    this.isAuthenticated = true;
+                    document.body.classList.add('authenticated');
+                    return;
+                }
+            } catch (e) {
+                console.error('Erreur lors de la vérification du token:', e);
+            }
+        }
+        this.isAuthenticated = false;
+        document.body.classList.remove('authenticated');
+    }
+
+    setupAuthentication() {
+        const loginForm = document.getElementById('login-form');
+        const authOverlay = document.getElementById('auth-overlay');
+        
+        if (loginForm) {
+            loginForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                this.handleLogin();
+            });
+        }
+        
+        // Masquer le contenu principal
+        document.body.classList.remove('authenticated');
+    }
+
+    handleLogin() {
+        const username = document.getElementById('username').value;
+        const password = document.getElementById('password').value;
+        
+        // Identifiants de test
+        const validCredentials = {
+            'admin': 'gestprev2024',
+            'rh': 'rh2024',
+            'ca': 'ca2024'
+        };
+        
+        if (validCredentials[username] && validCredentials[username] === password) {
+            // Créer un token d'authentification
+            const authData = {
+                username: username,
+                expires: Date.now() + (24 * 60 * 60 * 1000), // 24h
+                timestamp: Date.now()
+            };
+            
+            localStorage.setItem('gestPrevAuth', JSON.stringify(authData));
+            this.isAuthenticated = true;
+            document.body.classList.add('authenticated');
+            
+            // Masquer l'overlay d'authentification
+            const authOverlay = document.getElementById('auth-overlay');
+            if (authOverlay) {
+                authOverlay.style.display = 'none';
+            }
+            
+            // Afficher le contenu principal
+            const mainHeader = document.querySelector('.main-header');
+            if (mainHeader) {
+                mainHeader.style.display = 'block';
+            }
+            
+            // Initialiser l'application après authentification
+            this.loadFromLocalStorage();
+            
+            // Créer des données de test si nécessaire
+            if (this.services.length === 0 || this.employes.length === 0) {
+                this.createTestData();
+            }
+            
+            // Configuration et affichage
+            this.ensureDefaultConfiguration();
+            this.setupEventListeners();
+            this.setupCheckboxHandlers();
+            this.updateAllSelects();
+            this.displayServices();
+            this.displayEmployes();
+            this.initializePlanningDisplay();
+            
+            this.showNotification('Connexion réussie ! Bienvenue dans GEST PREV.', 'success');
+        } else {
+            this.showNotification('Identifiants incorrects. Veuillez réessayer.', 'error');
+        }
+    }
+
+    logout() {
+        localStorage.removeItem('gestPrevAuth');
+        this.isAuthenticated = false;
+        document.body.classList.remove('authenticated');
+        
+        // Afficher l'overlay d'authentification
+        const authOverlay = document.getElementById('auth-overlay');
+        if (authOverlay) {
+            authOverlay.style.display = 'flex';
+        }
+        
+        // Masquer le contenu principal
+        const mainHeader = document.querySelector('.main-header');
+        if (mainHeader) {
+            mainHeader.style.display = 'none';
+        }
+        
+        this.showNotification('Déconnexion réussie.', 'info');
+    }
+
+    // ===== CONFIGURATION VERROUILLÉE =====
+    ensureDefaultConfiguration() {
     // Vérifier et restaurer la configuration par défaut
     const config = JSON.parse(localStorage.getItem('gestPrevConfig') || '{}');
     
@@ -613,6 +736,14 @@ ensureDefaultConfiguration() {
     // ===== GESTION DES ÉVÉNEMENTS =====
     setupEventListeners() {
         console.log('🔧 Configuration des event listeners...');
+        
+        // Gestion de la déconnexion
+        const logoutBtn = document.getElementById('logout-btn');
+        if (logoutBtn) {
+            logoutBtn.addEventListener('click', () => {
+                this.logout();
+            });
+        }
         
         // Formulaire de service
         const serviceForm = document.getElementById('service-form');
