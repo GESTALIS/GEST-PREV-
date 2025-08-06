@@ -499,6 +499,14 @@ ensureDefaultConfiguration() {
         this.setupAnnualSimulationEventListeners();
         this.initializeLegalRules();
         
+        // Event listener pour la simulation RH avancée
+        const runAdvancedRHSimulationBtn = document.getElementById('run-advanced-rh-simulation');
+        if (runAdvancedRHSimulationBtn) {
+            runAdvancedRHSimulationBtn.addEventListener('click', () => {
+                this.runAdvancedRHSimulation();
+            });
+        }
+        
         // Initialisation du sélecteur d'employés personnalisé
         this.setupCustomMultiselect();
         
@@ -513,6 +521,15 @@ ensureDefaultConfiguration() {
         }, 1000);
         
         console.log('✅ Event listeners configurés');
+
+        // Dans la fonction setupEventListeners(), ajouter :
+        this.setupEnhancedPlanningHandlers();
+        
+        // Initialisation de l'interface simplifiée
+        this.setupSimplifiedPlanningHandlers();
+        
+        // Initialiser l'affichage des scénarios
+        this.displayScenariosList();
     }
 
     setupCheckboxHandlers() {
@@ -977,6 +994,20 @@ ensureDefaultConfiguration() {
         const heuresContractuelles = typeHeures === '35' ? 1820 : 2028;
         const heuresHebdo = typeHeures === '35' ? 35 : 39;
 
+        // Récupérer les horaires de travail
+        const horaires = {};
+        const jours = ['lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi', 'dimanche'];
+        jours.forEach(jour => {
+            horaires[jour] = {
+                debut: formData.get(`${jour}-debut`) || '08:00',
+                fin: formData.get(`${jour}-fin`) || '17:00',
+                actif: formData.get(`${jour}-actif`) === 'on'
+            };
+        });
+
+        // Récupérer le mode de gestion
+        const modeGestion = formData.get('employe-mode') || 'semi-auto';
+
         const employe = {
             id: this.generateId(),
             nom: formData.get('employe-nom'),
@@ -1004,9 +1035,15 @@ ensureDefaultConfiguration() {
                 }
             },
             
+            // Horaires de travail par jour
+            horaires: horaires,
+            
             // Attribution prévisionnelle
             servicesAttribues: selectedServices,
             quotasParService: {},
+            
+            // Mode de gestion (manuel, semi-auto, auto)
+            modeGestion: modeGestion,
             
             createdAt: new Date().toISOString()
         };
@@ -1533,8 +1570,18 @@ ensureDefaultConfiguration() {
     }
 
     generatePlanning() {
-        const serviceId = document.getElementById('planning-service').value;
-        const weekInput = document.getElementById('planning-week').value;
+        // Vérifier si on est dans l'interface simplifiée
+        const simplifiedInterface = document.getElementById('employes-available');
+        
+        if (simplifiedInterface) {
+            // Interface simplifiée - utiliser la nouvelle logique
+            this.generateSimplifiedPlanning();
+            return;
+        }
+        
+        // Ancienne interface - logique originale
+        const serviceId = document.getElementById('planning-service')?.value;
+        const weekInput = document.getElementById('planning-week')?.value;
         const selectedEmployes = Array.from(document.querySelectorAll('input[name="planning-employes"]:checked'))
             .map(checkbox => checkbox.value);
 
@@ -1940,6 +1987,372 @@ ensureDefaultConfiguration() {
         this.showNotification('Analyse financière terminée avec succès !', 'success');
     }
 
+    // ===== SIMULATION RH AVANCÉE =====
+    runAdvancedRHSimulation() {
+        // Vérifier s'il y a un planning généré
+        const planningResults = document.getElementById('planning-results');
+        if (!planningResults || planningResults.innerHTML.includes('Aucun planning généré')) {
+            this.showNotification('Veuillez d\'abord générer un planning pour calculer la masse salariale réelle', 'warning');
+            return;
+        }
+
+        const periode = parseInt(document.getElementById('simulation-periode').value);
+        const tauxCharges = parseFloat(document.getElementById('simulation-taux-charges').value);
+        const caEstime = parseFloat(document.getElementById('simulation-ca-estime').value);
+        const margeObjectif = parseFloat(document.getElementById('simulation-marge-objectif').value);
+
+        if (!periode || !tauxCharges || !caEstime || !margeObjectif) {
+            this.showNotification('Veuillez remplir tous les champs', 'error');
+            return;
+        }
+        
+        // Récupérer les données du planning actuel
+        const planningData = this.getCurrentPlanningData();
+        if (!planningData) {
+            this.showNotification('Aucune donnée de planning trouvée', 'error');
+            return;
+        }
+        
+        const results = this.calculateAdvancedRHSimulationFromPlanning(planningData, periode, tauxCharges, caEstime, margeObjectif);
+        this.displayAdvancedRHResults(results);
+        
+        this.showNotification('Simulation RH avancée basée sur le planning réel terminée !', 'success');
+    }
+
+    getCurrentPlanningData() {
+        // Récupérer les données du planning actuel depuis le localStorage ou la session
+        const currentPlanning = localStorage.getItem('currentPlanning');
+        if (currentPlanning) {
+            return JSON.parse(currentPlanning);
+        }
+        
+        // Si pas de planning sauvegardé, essayer de récupérer depuis l'interface
+        const planningResults = document.getElementById('planning-results');
+        if (planningResults && !planningResults.innerHTML.includes('Aucun planning généré')) {
+            // Extraire les données du planning affiché
+            return this.extractPlanningDataFromUI();
+        }
+        
+        return null;
+    }
+
+    extractPlanningDataFromUI() {
+        // Extraire les données du planning depuis l'interface utilisateur
+        const planningData = {
+            service: null,
+            employes: [],
+            semaines: [],
+            totalHeures: 0,
+            masseSalariale: 0
+        };
+
+        // Récupérer le service sélectionné
+        const serviceSelect = document.getElementById('planning-service');
+        if (serviceSelect && serviceSelect.value) {
+            const service = this.services.find(s => s.id === serviceSelect.value);
+            if (service) {
+                planningData.service = service;
+            }
+        }
+
+        // Récupérer les employés sélectionnés
+        const selectedEmployes = this.getSelectedEmployes();
+        planningData.employes = selectedEmployes;
+
+        // Calculer les heures totales et la masse salariale
+        if (planningData.service && planningData.employes.length > 0) {
+            planningData.totalHeures = this.calculateTotalHoursFromPlanning(planningData.service, planningData.employes);
+            planningData.masseSalariale = this.calculateMasseSalarialeFromPlanning(planningData.employes, planningData.totalHeures);
+        }
+
+        return planningData;
+    }
+
+    calculateTotalHoursFromPlanning(service, employes) {
+        // Calculer les heures totales basées sur le planning réel
+        let totalHeures = 0;
+        
+        // Calculer les heures par saison
+        const heuresHaute = this.calculateHeuresSemaine(service).haute;
+        const heuresBasse = this.calculateHeuresSemaine(service).basse;
+        
+        // Répartir sur 52 semaines (haute saison = 6 mois, basse saison = 6 mois)
+        totalHeures = (heuresHaute * 26) + (heuresBasse * 26);
+        
+        return totalHeures;
+    }
+
+    calculateMasseSalarialeFromPlanning(employes, totalHeures) {
+        // Calculer la masse salariale basée sur les heures réelles du planning
+        let masseSalariale = 0;
+        
+        employes.forEach(employe => {
+            // Calculer les heures par employé basées sur sa disponibilité
+            const heuresParEmploye = totalHeures / employes.length;
+            const salaireAnnuel = heuresParEmploye * employe.salaireHoraire;
+            masseSalariale += salaireAnnuel;
+        });
+        
+        return masseSalariale;
+    }
+
+    // === NOUVELLES FONCTIONS POUR LA SIMULATION RH BASÉE SUR LE PLANNING ===
+    
+    calculateGestionCongesFromPlanning(employes, periode) {
+        const totalEmployes = employes.length;
+        const joursCongesParEmploye = 25; // Congés payés
+        const joursReposHebdo = 104; // 52 semaines * 2 jours
+        const joursFeries = 11;
+        
+        // Calculer les heures de travail réelles basées sur le planning
+        const heuresTravailReelles = employes.reduce((total, emp) => {
+            return total + (emp.disponibilite ? emp.disponibilite.heuresAnnuelContractuelles : 1820);
+        }, 0);
+        
+        const totalJoursConges = totalEmployes * joursCongesParEmploye;
+        const totalJoursRepos = totalEmployes * joursReposHebdo;
+        const totalJoursFeries = totalEmployes * joursFeries;
+        
+        const joursDisponibles = 365 * periode;
+        const joursNonDisponibles = totalJoursConges + totalJoursRepos + totalJoursFeries;
+        const tauxDisponibilite = ((joursDisponibles - joursNonDisponibles) / joursDisponibles) * 100;
+        
+        return {
+            totalJoursConges: totalJoursConges,
+            totalJoursRepos: totalJoursRepos,
+            totalJoursFeries: totalJoursFeries,
+            joursDisponibles: joursDisponibles,
+            joursNonDisponibles: joursNonDisponibles,
+            tauxDisponibilite: tauxDisponibilite,
+            heuresTravailReelles: heuresTravailReelles,
+            repartition: {
+                congés: totalJoursConges,
+                repos: totalJoursRepos,
+                fériés: totalJoursFeries,
+                travail: joursDisponibles - joursNonDisponibles
+            }
+        };
+    }
+
+    calculateRotationEquipesFromPlanning(service, employes) {
+        const rotation = {
+            hauteSaison: {
+                effectifNecessaire: 0,
+                effectifDisponible: employes.length,
+                tauxRotation: 0,
+                flexibilite: 0
+            },
+            basseSaison: {
+                effectifNecessaire: 0,
+                effectifDisponible: employes.length,
+                tauxRotation: 0,
+                flexibilite: 0
+            }
+        };
+
+        // Calculer les besoins basés sur le planning réel
+        if (service) {
+            const heuresHaute = this.calculateHeuresSemaine(service).haute;
+            const heuresBasse = this.calculateHeuresSemaine(service).basse;
+            
+            rotation.hauteSaison.effectifNecessaire = Math.ceil(heuresHaute / 35);
+            rotation.basseSaison.effectifNecessaire = Math.ceil(heuresBasse / 35);
+        }
+
+        // Calculer les taux de rotation
+        rotation.hauteSaison.tauxRotation = rotation.hauteSaison.effectifNecessaire > 0 
+            ? (rotation.hauteSaison.effectifDisponible / rotation.hauteSaison.effectifNecessaire) * 100 
+            : 0;
+        rotation.basseSaison.tauxRotation = rotation.basseSaison.effectifNecessaire > 0 
+            ? (rotation.basseSaison.effectifDisponible / rotation.basseSaison.effectifNecessaire) * 100 
+            : 0;
+        
+        // Calculer la flexibilité basée sur les contrats réels
+        const employesFlexibles = employes.filter(emp => emp.disponibilite && emp.disponibilite.heuresAnnuelContractuelles === 1820);
+        rotation.hauteSaison.flexibilite = (employesFlexibles.length / employes.length) * 100;
+        rotation.basseSaison.flexibilite = (employesFlexibles.length / employes.length) * 100;
+
+        return rotation;
+    }
+
+    calculateIndicateursRHFromPlanning(totalHeures, totalCout, employes) {
+        const totalEmployes = employes.length;
+        const heuresParEmploye = totalHeures / totalEmployes;
+        const coutParEmploye = totalCout / totalEmployes;
+        const productiviteEmploye = totalHeures > 0 ? totalCout / totalHeures : 0;
+        
+        // Taux de turnover estimé (industrie hôtelière)
+        const tauxTurnover = 25; // 25% par an
+        
+        // Coût de recrutement moyen
+        const coutRecrutement = 3000; // € par recrutement
+        const recrutementsAnnuels = Math.ceil(totalEmployes * (tauxTurnover / 100));
+        const coutRecrutementTotal = recrutementsAnnuels * coutRecrutement;
+        
+        // Coût de formation
+        const coutFormationParEmploye = 1500; // € par an
+        const coutFormationTotal = totalEmployes * coutFormationParEmploye;
+        
+        // Indice de satisfaction estimé basé sur les données réelles
+        const satisfaction = this.calculateSatisfactionEmployesFromPlanning(employes);
+        
+        return {
+            totalEmployes: totalEmployes,
+            heuresParEmploye: heuresParEmploye,
+            coutParEmploye: coutParEmploye,
+            productiviteEmploye: productiviteEmploye,
+            tauxTurnover: tauxTurnover,
+            coutRecrutementTotal: coutRecrutementTotal,
+            coutFormationTotal: coutFormationTotal,
+            satisfaction: satisfaction,
+            coutRHTotal: totalCout + coutRecrutementTotal + coutFormationTotal
+        };
+    }
+
+    calculateSatisfactionEmployesFromPlanning(employes) {
+        let satisfaction = 0;
+        let facteurs = 0;
+        
+        // Facteur 1: Équilibre travail/vie basé sur les heures réelles
+        const heuresMoyennes = employes.reduce((sum, emp) => {
+            const heures = emp.disponibilite ? emp.disponibilite.heuresSemaineContractuelles : 35;
+            return sum + heures;
+        }, 0) / employes.length;
+        
+        const satisfactionEquilibre = heuresMoyennes <= 35 ? 90 : heuresMoyennes <= 39 ? 75 : 60;
+        satisfaction += satisfactionEquilibre;
+        facteurs++;
+        
+        // Facteur 2: Diversité des compétences
+        const competences = this.analyzeCompetences();
+        const diversiteCompetences = Object.keys(competences).length;
+        const satisfactionDiversite = Math.min(90, diversiteCompetences * 15);
+        satisfaction += satisfactionDiversite;
+        facteurs++;
+        
+        // Facteur 3: Niveaux de responsabilité
+        const niveaux = this.analyzeNiveaux(employes);
+        const satisfactionNiveaux = niveaux.senior > 0 ? 85 : 60;
+        satisfaction += satisfactionNiveaux;
+        facteurs++;
+        
+        return satisfaction / facteurs;
+    }
+
+    generateRHScenariosFromPlanning(planningData, periode, tauxCharges, caEstime, margeObjectif) {
+        const scenarios = [];
+        const { masseSalariale, totalHeures } = planningData;
+        
+        // Scénario 1: Optimisation des coûts
+        const scenarioOptimisation = {
+            nom: "Optimisation des coûts",
+            description: "Réduction des coûts RH de 15%",
+            impact: {
+                coutReduction: 0.15,
+                productivite: 1.05,
+                satisfaction: 0.95
+            }
+        };
+        
+        // Scénario 2: Amélioration de la productivité
+        const scenarioProductivite = {
+            nom: "Amélioration de la productivité",
+            description: "Formation et optimisation des processus",
+            impact: {
+                coutReduction: 0.05,
+                productivite: 1.20,
+                satisfaction: 1.10
+            }
+        };
+        
+        // Scénario 3: Flexibilité maximale
+        const scenarioFlexibilite = {
+            nom: "Flexibilité maximale",
+            description: "Plus d'employés 35h et rotation",
+            impact: {
+                coutReduction: 0.10,
+                productivite: 1.15,
+                satisfaction: 1.15
+            }
+        };
+        
+        // Calculer les impacts pour chaque scénario basé sur les données réelles
+        [scenarioOptimisation, scenarioProductivite, scenarioFlexibilite].forEach(scenario => {
+            const coutScenario = masseSalariale * (1 - scenario.impact.coutReduction);
+            const chargesScenario = coutScenario * (tauxCharges / 100);
+            const coutTotalScenario = coutScenario + chargesScenario;
+            
+            const margeScenario = caEstime - coutTotalScenario;
+            const margePourcentageScenario = caEstime > 0 ? (margeScenario / caEstime) * 100 : 0;
+            
+            scenario.resultats = {
+                coutReduction: scenario.impact.coutReduction * 100,
+                margePourcentage: margePourcentageScenario,
+                ecartObjectif: margePourcentageScenario - margeObjectif,
+                economies: masseSalariale - coutScenario
+            };
+            
+            scenarios.push(scenario);
+        });
+        
+        return scenarios;
+    }
+
+    analyzeRisquesRHFromPlanning(planningData) {
+        const risques = [];
+        const { service, employes, totalHeures } = planningData;
+        
+        // Risque 1: Sous-effectif basé sur le planning réel
+        const effectifNecessaire = Math.ceil(totalHeures / 35);
+        if (employes.length < effectifNecessaire) {
+            risques.push({
+                type: 'danger',
+                niveau: 'Élevé',
+                description: `Sous-effectif : ${employes.length}/${effectifNecessaire} employés`,
+                impact: 'Risque de surcharge et turnover',
+                recommandation: 'Recruter des employés supplémentaires'
+            });
+        }
+        
+        // Risque 2: Manque de seniors
+        const niveaux = this.analyzeNiveaux(employes);
+        if (niveaux.senior < 1 && employes.length > 2) {
+            risques.push({
+                type: 'warning',
+                niveau: 'Moyen',
+                description: 'Aucun employé senior',
+                impact: 'Manque de supervision et expertise',
+                recommandation: 'Promouvoir ou recruter des seniors'
+            });
+        }
+        
+        // Risque 3: Coût horaire élevé basé sur les données réelles
+        const coutHoraireMoyen = employes.reduce((sum, emp) => sum + emp.salaireHoraire, 0) / employes.length;
+        if (coutHoraireMoyen > 25) {
+            risques.push({
+                type: 'warning',
+                niveau: 'Moyen',
+                description: `Coût horaire élevé : ${coutHoraireMoyen.toFixed(2)}€/h`,
+                impact: 'Rentabilité compromise',
+                recommandation: 'Optimiser la structure salariale'
+            });
+        }
+        
+        // Risque 4: Manque de flexibilité
+        const employes35h = employes.filter(emp => emp.disponibilite && emp.disponibilite.heuresAnnuelContractuelles === 1820);
+        if (employes35h.length === 0) {
+            risques.push({
+                type: 'info',
+                niveau: 'Faible',
+                description: 'Aucun employé 35h',
+                impact: 'Flexibilité limitée pour les pics',
+                recommandation: 'Diversifier les contrats'
+            });
+        }
+        
+        return risques;
+    }
+
     calculateAdvancedSimulation(periode, tauxCharges, caEstime, margeObjectif) {
         // Calcul des heures totales des services
         const totalHeuresServices = this.services.reduce((total, service) => {
@@ -2292,7 +2705,25 @@ ensureDefaultConfiguration() {
 
     // ===== UTILITAIRES =====
     parseTime(timeString) {
-        const [hours, minutes] = timeString.split(':').map(Number);
+        if (!timeString || typeof timeString !== 'string') {
+            console.log('❌ parseTime: timeString invalide:', timeString);
+            return null;
+        }
+        
+        const parts = timeString.split(':');
+        if (parts.length !== 2) {
+            console.log('❌ parseTime: format invalide:', timeString);
+            return null;
+        }
+        
+        const hours = parseInt(parts[0], 10);
+        const minutes = parseInt(parts[1], 10);
+        
+        if (isNaN(hours) || isNaN(minutes) || hours < 0 || hours > 23 || minutes < 0 || minutes > 59) {
+            console.log('❌ parseTime: heures/minutes invalides:', hours, minutes);
+            return null;
+        }
+        
         return hours * 60 + minutes;
     }
 
@@ -2304,6 +2735,446 @@ ensureDefaultConfiguration() {
 
     generateId() {
         return Date.now().toString(36) + Math.random().toString(36).substr(2);
+    }
+
+    // ===== GESTION DES SIMULATIONS =====
+    saveSimulation(simulation) {
+        const simulations = JSON.parse(localStorage.getItem('gestPrevSimulations') || '[]');
+        simulation.id = Date.now();
+        simulation.date = new Date().toISOString();
+        simulation.nom = simulation.nom || `Simulation ${new Date().toLocaleDateString()}`;
+        simulations.push(simulation);
+        localStorage.setItem('gestPrevSimulations', JSON.stringify(simulations));
+        this.showNotification('Simulation sauvegardée avec succès !', 'success');
+    }
+
+    // ===== GESTION DES SCÉNARIOS =====
+    saveCurrentScenario() {
+        const scenarioName = prompt('Nom du scénario :');
+        if (!scenarioName) return;
+
+        const currentScenario = {
+            id: this.generateId(),
+            name: scenarioName,
+            date: new Date().toISOString(),
+            services: [...this.services],
+            employes: [...this.employes],
+            planning: [...this.planning],
+            config: {
+                legalRules: this.legalRules,
+                vacationPeriods: this.vacationPeriods
+            }
+        };
+
+        // Sauvegarder dans localStorage
+        const scenarios = JSON.parse(localStorage.getItem('gestPrevScenarios') || '[]');
+        scenarios.push(currentScenario);
+        localStorage.setItem('gestPrevScenarios', JSON.stringify(scenarios));
+
+        this.showNotification(`Scénario "${scenarioName}" sauvegardé avec succès !`, 'success');
+        this.displayScenariosList();
+    }
+
+    loadScenario(scenarioId) {
+        const scenarios = JSON.parse(localStorage.getItem('gestPrevScenarios') || '[]');
+        const scenario = scenarios.find(s => s.id === scenarioId);
+        
+        if (!scenario) {
+            this.showNotification('Scénario non trouvé', 'error');
+            return;
+        }
+
+        // Confirmer le chargement
+        if (!confirm(`Charger le scénario "${scenario.name}" ? Cela remplacera les données actuelles.`)) {
+            return;
+        }
+
+        // Charger les données du scénario
+        this.services = [...scenario.services];
+        this.employes = [...scenario.employes];
+        this.planning = [...scenario.planning];
+        this.legalRules = { ...this.legalRules, ...scenario.config.legalRules };
+        this.vacationPeriods = { ...this.vacationPeriods, ...scenario.config.vacationPeriods };
+
+        // Sauvegarder et mettre à jour l'affichage
+        this.saveToLocalStorage();
+        this.displayServices();
+        this.displayEmployes();
+        this.updateAllSelects();
+
+        this.showNotification(`Scénario "${scenario.name}" chargé avec succès !`, 'success');
+    }
+
+    deleteScenario(scenarioId) {
+        const scenarios = JSON.parse(localStorage.getItem('gestPrevScenarios') || '[]');
+        const updatedScenarios = scenarios.filter(s => s.id !== scenarioId);
+        localStorage.setItem('gestPrevScenarios', JSON.stringify(updatedScenarios));
+
+        this.showNotification('Scénario supprimé avec succès !', 'info');
+        this.displayScenariosList();
+    }
+
+    displayScenariosList() {
+        const scenariosContainer = document.getElementById('scenarios-list');
+        if (!scenariosContainer) return;
+
+        const scenarios = JSON.parse(localStorage.getItem('gestPrevScenarios') || '[]');
+
+        if (scenarios.length === 0) {
+            scenariosContainer.innerHTML = `
+                <div class="empty-state">
+                    <i class="fas fa-save" style="font-size: 2rem; color: var(--medium-gray); margin-bottom: 1rem;"></i>
+                    <p>Aucun scénario sauvegardé</p>
+                    <small>Créez un scénario pour le sauvegarder ici</small>
+                </div>
+            `;
+            return;
+        }
+
+        scenariosContainer.innerHTML = scenarios.map(scenario => {
+            const date = new Date(scenario.date);
+            const servicesCount = scenario.services.length;
+            const employesCount = scenario.employes.length;
+
+            return `
+                <div class="scenario-item" data-scenario-id="${scenario.id}">
+                    <div class="scenario-header">
+                        <div class="scenario-info">
+                            <h5>${scenario.name}</h5>
+                            <small>Créé le ${date.toLocaleDateString('fr-FR')}</small>
+                        </div>
+                        <div class="scenario-stats">
+                            <span class="stat-badge">
+                                <i class="fas fa-cogs"></i> ${servicesCount} services
+                            </span>
+                            <span class="stat-badge">
+                                <i class="fas fa-users"></i> ${employesCount} employés
+                            </span>
+                        </div>
+                    </div>
+                    <div class="scenario-actions">
+                        <button class="btn btn-sm btn-primary" onclick="gestPrev.loadScenario('${scenario.id}')">
+                            <i class="fas fa-download"></i> Charger
+                        </button>
+                        <button class="btn btn-sm btn-danger" onclick="gestPrev.deleteScenario('${scenario.id}')">
+                            <i class="fas fa-trash"></i> Supprimer
+                        </button>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    loadSimulations() {
+        return JSON.parse(localStorage.getItem('gestPrevSimulations') || '[]');
+    }
+
+    deleteSimulation(simulationId) {
+        const simulations = this.loadSimulations();
+        const updatedSimulations = simulations.filter(s => s.id !== simulationId);
+        localStorage.setItem('gestPrevSimulations', JSON.stringify(updatedSimulations));
+        this.showNotification('Simulation supprimée avec succès !', 'info');
+    }
+
+    // ===== CALCUL DES HEURES RESTANTES =====
+    calculateAvailableHours(employe, semaine) {
+        const heuresContractuelles = employe.disponibilite.heuresHebdoStandard;
+        const heuresAffectees = this.getHeuresAffectees(employe, semaine);
+        return Math.max(0, heuresContractuelles - heuresAffectees);
+    }
+
+    getHeuresAffectees(employe, semaine) {
+        // Calculer les heures déjà affectées à l'employé pour cette semaine
+        let heuresAffectees = 0;
+        
+        // Parcourir tous les services où l'employé est affecté
+        employe.servicesAttribues.forEach(serviceId => {
+            const service = this.services.find(s => s.id === serviceId);
+            if (service) {
+                // Calculer les heures du service pour cette semaine
+                const heuresService = this.calculateServiceHoursForWeek(service, semaine);
+                // Répartir proportionnellement entre les employés du service
+                const employesService = this.employes.filter(e => e.servicesAttribues.includes(serviceId));
+                const heuresParEmploye = heuresService / employesService.length;
+                heuresAffectees += heuresParEmploye;
+            }
+        });
+        
+        return Math.round(heuresAffectees * 10) / 10;
+    }
+
+    calculateServiceHoursForWeek(service, semaine) {
+        const saison = document.querySelector('.btn-saison.active')?.dataset.saison || 'haute';
+        let totalHours = 0;
+        
+        const joursSemaine = ['lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi', 'dimanche'];
+        joursSemaine.forEach(jour => {
+            const horaires = service.horairesParJour[jour];
+            if (horaires && horaires[saison] && horaires[saison].ouverture && horaires[saison].fermeture) {
+                const debut = this.parseTime(horaires[saison].ouverture);
+                const fin = this.parseTime(horaires[saison].fermeture);
+                
+                if (debut !== null && fin !== null) {
+                    let duree = (fin - debut) / 60;
+                    if (duree < 0) duree += 24;
+                    totalHours += duree;
+                }
+            }
+        });
+        
+        return Math.round(totalHours * 10) / 10;
+    }
+
+    // ===== MODES DE GESTION =====
+    setEmployeMode(employeId, mode) {
+        const employe = this.employes.find(e => e.id === employeId);
+        if (employe) {
+            employe.modeGestion = mode;
+            this.saveToLocalStorage();
+            this.showNotification(`Mode ${mode} activé pour ${employe.prenom} ${employe.nom}`, 'info');
+        }
+    }
+
+    getEmployeMode(employeId) {
+        const employe = this.employes.find(e => e.id === employeId);
+        return employe ? employe.modeGestion : 'semi-auto';
+    }
+
+    // ===== LOGIQUE DE COUVERTURE 100% =====
+    optimizeCoverage(service, employes) {
+        const saison = document.querySelector('.btn-saison.active')?.dataset.saison || 'haute';
+        const horairesService = this.calculateServiceHoursForWeek(service, 1);
+        
+        // Calculer les heures disponibles par employé
+        const employesDisponibilite = employes.map(emp => ({
+            employe: emp,
+            heuresDisponibles: this.calculateAvailableHours(emp, 1),
+            heuresAffectees: this.getHeuresAffectees(emp, 1),
+            mode: emp.modeGestion
+        }));
+
+        // Trier par disponibilité (plus disponible en premier)
+        employesDisponibilite.sort((a, b) => b.heuresDisponibles - a.heuresDisponibles);
+
+        // Calculer la couverture optimale
+        const resultat = {
+            couverture: 0,
+            repartition: [],
+            alertes: []
+        };
+
+        let heuresRestantes = horairesService;
+        let heuresUtilisees = 0;
+
+        // Répartir les heures selon les modes de gestion
+        employesDisponibilite.forEach(item => {
+            if (heuresRestantes <= 0) return;
+
+            const heuresAAllouer = Math.min(item.heuresDisponibles, heuresRestantes);
+            
+            if (heuresAAllouer > 0) {
+                resultat.repartition.push({
+                    employe: item.employe,
+                    heuresAllouees: heuresAAllouer,
+                    mode: item.mode,
+                    pourcentage: (heuresAAllouer / horairesService) * 100
+                });
+                
+                heuresUtilisees += heuresAAllouer;
+                heuresRestantes -= heuresAAllouer;
+            }
+        });
+
+        // Calculer la couverture finale
+        resultat.couverture = (heuresUtilisees / horairesService) * 100;
+
+        // Générer les alertes
+        if (resultat.couverture < 100) {
+            resultat.alertes.push({
+                type: 'warning',
+                message: `Couverture insuffisante : ${resultat.couverture.toFixed(1)}%. Il manque ${heuresRestantes.toFixed(1)}h pour atteindre 100%.`
+            });
+        } else if (resultat.couverture > 100) {
+            resultat.alertes.push({
+                type: 'info',
+                message: `Couverture excessive : ${resultat.couverture.toFixed(1)}%. Surplus de ${Math.abs(heuresRestantes).toFixed(1)}h.`
+            });
+        }
+
+        // Vérifier les contraintes légales
+        resultat.repartition.forEach(item => {
+            const heuresTotal = item.heuresAffectees + item.heuresAllouees;
+            if (heuresTotal > 46) {
+                resultat.alertes.push({
+                    type: 'danger',
+                    message: `${item.employe.prenom} ${item.employe.nom} : Dépassement de la limite hebdomadaire (${heuresTotal.toFixed(1)}h > 46h)`
+                });
+            }
+        });
+
+        return resultat;
+    }
+
+    // ===== VALIDATION DES CONTRAINTES LÉGALES =====
+    validateLegalConstraints(employe, heuresSupplementaires) {
+        const alertes = [];
+        
+        // Vérifier la limite hebdomadaire (46h)
+        const heuresTotal = employe.disponibilite.heuresHebdoStandard + heuresSupplementaires;
+        if (heuresTotal > 46) {
+            alertes.push({
+                type: 'danger',
+                message: `Dépassement de la limite hebdomadaire : ${heuresTotal.toFixed(1)}h > 46h`
+            });
+        }
+
+        // Vérifier la limite journalière (11h)
+        const heuresMaxJour = Math.max(...Object.values(employe.horaires).map(h => {
+            if (!h.actif) return 0;
+            const debut = this.parseTime(h.debut);
+            const fin = this.parseTime(h.fin);
+            return fin > debut ? (fin - debut) / 60 : ((fin + 24) - debut) / 60;
+        }));
+        
+        if (heuresMaxJour > 11) {
+            alertes.push({
+                type: 'danger',
+                message: `Dépassement de la limite journalière : ${heuresMaxJour.toFixed(1)}h > 11h`
+            });
+        }
+
+        // Vérifier les pauses obligatoires
+        const heuresSansPause = employe.disponibilite.heuresHebdoStandard;
+        if (heuresSansPause > 6) {
+            alertes.push({
+                type: 'warning',
+                message: `Pause obligatoire de 20min après 6h de travail`
+            });
+        }
+
+        return alertes;
+    }
+
+    // ===== AFFICHAGE DE L'HISTORIQUE DES SIMULATIONS =====
+    displaySimulationsHistory() {
+        const simulations = this.loadSimulations();
+        const container = document.getElementById('simulations-history');
+        if (!container) return;
+        
+        if (simulations.length === 0) {
+            container.innerHTML = '<p class="no-simulations">Aucune simulation sauvegardée</p>';
+            container.style.display = 'block';
+            return;
+        }
+        
+        let html = '<h6><i class="fas fa-history"></i> Historique des simulations</h6>';
+        html += '<div class="simulations-list">';
+        
+        simulations.forEach(simulation => {
+            const date = new Date(simulation.date).toLocaleDateString();
+            const time = new Date(simulation.date).toLocaleTimeString();
+            
+            html += `
+                <div class="simulation-item" data-simulation-id="${simulation.id}">
+                    <div class="simulation-header">
+                        <div class="simulation-info">
+                            <h6>${simulation.nom}</h6>
+                            <span class="simulation-date">${date} à ${time}</span>
+                        </div>
+                        <div class="simulation-stats">
+                            <span class="coverage-badge ${this.getCoverageClass(simulation.coverage)}">
+                                ${simulation.coverage}% couverture
+                            </span>
+                            <span class="cost-badge">
+                                ${simulation.estimatedCost.toLocaleString()}€/an
+                            </span>
+                        </div>
+                    </div>
+                    <div class="simulation-details">
+                        <span>Service: ${simulation.service}</span>
+                        <span>Employés: ${simulation.employes.length}</span>
+                        <span>Heures: ${simulation.selectedHours}h/semaine</span>
+                    </div>
+                    <div class="simulation-actions">
+                        <button class="btn btn-sm btn-primary" onclick="gestPrev.loadSimulation('${simulation.id}')">
+                            <i class="fas fa-eye"></i> Voir
+                        </button>
+                        <button class="btn btn-sm btn-secondary" onclick="gestPrev.exportSimulation('${simulation.id}')">
+                            <i class="fas fa-download"></i> Exporter
+                        </button>
+                        <button class="btn btn-sm btn-danger" onclick="gestPrev.deleteSimulation('${simulation.id}')">
+                            <i class="fas fa-trash"></i> Supprimer
+                        </button>
+                    </div>
+                </div>
+            `;
+        });
+        
+        html += '</div>';
+        container.innerHTML = html;
+        container.style.display = 'block';
+        
+        // Masquer la prévisualisation si elle était affichée
+        const previewContainer = document.getElementById('planning-preview');
+        if (previewContainer) {
+            previewContainer.style.display = 'none';
+        }
+    }
+
+    loadSimulation(simulationId) {
+        const simulations = this.loadSimulations();
+        const simulation = simulations.find(s => s.id === simulationId);
+        if (!simulation) {
+            this.showNotification('Simulation non trouvée', 'error');
+            return;
+        }
+        
+        // Charger les données de la simulation
+        this.loadSimulationData(simulation);
+        this.showNotification(`Simulation "${simulation.nom}" chargée`, 'success');
+    }
+
+    loadSimulationData(simulation) {
+        // Sélectionner le service
+        const serviceSelect = document.getElementById('planning-service');
+        if (serviceSelect) {
+            const service = this.services.find(s => s.name === simulation.service);
+            if (service) {
+                serviceSelect.value = service.id;
+            }
+        }
+        
+        // Sélectionner les employés
+        simulation.employes.forEach(employeId => {
+            const checkbox = document.querySelector(`[data-employe-id="${employeId}"]`);
+            if (checkbox) {
+                checkbox.checked = true;
+            }
+        });
+        
+        // Mettre à jour l'affichage
+        this.updateEmployesAnalysis();
+    }
+
+    exportSimulation(simulationId) {
+        const simulations = this.loadSimulations();
+        const simulation = simulations.find(s => s.id === simulationId);
+        if (!simulation) {
+            this.showNotification('Simulation non trouvée', 'error');
+            return;
+        }
+        
+        // Exporter en JSON
+        const dataStr = JSON.stringify(simulation, null, 2);
+        const dataBlob = new Blob([dataStr], {type: 'application/json'});
+        const url = URL.createObjectURL(dataBlob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `${simulation.nom}.json`;
+        link.click();
+        URL.revokeObjectURL(url);
+        
+        this.showNotification('Simulation exportée avec succès !', 'success');
     }
 
     showNotification(message, type = 'info') {
@@ -4052,10 +4923,3172 @@ ensureDefaultConfiguration() {
         return true;
     }
 
+    // ===== NOUVELLES FONCTIONS POUR LE PLANNING AMÉLIORÉ =====
+
+    // Initialisation des nouvelles fonctionnalités
+    setupEnhancedPlanningHandlers() {
+        // Mettre à jour l'analyse quand le service change
+        const serviceSelect = document.getElementById('planning-service');
+        if (serviceSelect) {
+            serviceSelect.addEventListener('change', () => {
+                this.updateEmployesAnalysis();
+                this.checkEmployesAlerts();
+            });
+        }
+    }
+
+    // Gestion du mode de génération
+    setupPlanningModeHandler() {
+        const modeInputs = document.querySelectorAll('input[name="planning-mode"]');
+        modeInputs.forEach(input => {
+            input.addEventListener('change', (e) => {
+                this.handlePlanningModeChange(e.target.value);
+            });
+        });
+    }
+
+    handlePlanningModeChange(mode) {
+        const semiManualElements = document.querySelectorAll('.semi-manual-only');
+        const autoElements = document.querySelectorAll('.auto-only');
+        
+        if (mode === 'semi-manuel') {
+            semiManualElements.forEach(el => el.style.display = 'block');
+            autoElements.forEach(el => el.style.display = 'none');
+            this.showNotification('Mode semi-manuel activé : Créez 2 semaines de référence', 'info');
+        } else {
+            semiManualElements.forEach(el => el.style.display = 'none');
+            autoElements.forEach(el => el.style.display = 'block');
+            this.showNotification('Mode automatique activé : Génération intelligente', 'info');
+        }
+    }
+
+    // Gestion des filtres d'employés
+    setupEmployesFilters() {
+        const filterButtons = document.querySelectorAll('.filter-btn');
+        filterButtons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                this.handleEmployesFilter(btn.dataset.filter);
+            });
+        });
+    }
+
+    handleEmployesFilter(filter) {
+        // Mettre à jour les boutons actifs
+        document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+        event.target.classList.add('active');
+        
+        // Filtrer les employés selon le critère
+        this.filterEmployesByCriteria(filter);
+    }
+
+    filterEmployesByCriteria(criteria) {
+        const employesContainer = document.getElementById('employes-available');
+        const employes = this.employes;
+        
+        let filteredEmployes = employes;
+        
+        switch(criteria) {
+            case 'service':
+                const selectedService = document.getElementById('planning-service').value;
+                filteredEmployes = employes.filter(emp => 
+                    emp.servicesAttribues.includes(selectedService)
+                );
+                break;
+            case 'contract':
+                filteredEmployes = employes.filter(emp => 
+                    emp.disponibilite?.heuresAnnuelContractuelles === 1820 // 35h
+                );
+                break;
+            case 'level':
+                filteredEmployes = employes.filter(emp => 
+                    emp.niveau === 'III' || emp.niveau === 'IV' || emp.niveau === 'V'
+                );
+                break;
+            default:
+                filteredEmployes = employes;
+        }
+        
+        this.displayFilteredEmployes(filteredEmployes);
+    }
+
+    displayFilteredEmployes(employes) {
+        const container = document.getElementById('employes-available');
+        container.innerHTML = '';
+        
+        employes.forEach(employe => {
+            const employeElement = this.createEmployeElement(employe);
+            container.appendChild(employeElement);
+        });
+    }
+
+    createEmployeElement(employe) {
+        const div = document.createElement('div');
+        div.className = 'employe-item';
+        div.dataset.employeId = employe.id;
+        
+        const contractType = employe.disponibilite?.heuresAnnuelContractuelles === 1820 ? '35h' : '39h';
+        
+        div.innerHTML = `
+            <div class="employe-info">
+                <div class="employe-name">${employe.prenom} ${employe.nom}</div>
+                <div class="employe-details">
+                    ${contractType} - Niveau ${employe.niveau} - ${employe.typeContrat}
+                </div>
+            </div>
+            <div class="employe-actions">
+                <button class="employe-btn add" onclick="gestPrev.addEmployeToSelection('${employe.id}')">
+                    <i class="fas fa-plus"></i>
+                </button>
+            </div>
+        `;
+        
+        return div;
+    }
+
+    // Gestion de la sélection d'employés
+    addEmployeToSelection(employeId) {
+        const employe = this.employes.find(e => e.id === employeId);
+        if (!employe) return;
+        
+        // Ajouter à la liste des sélectionnés
+        this.addToSelectedEmployes(employe);
+        
+        // Mettre à jour les statistiques
+        this.updateEmployesAnalysis();
+        
+        // Vérifier les alertes
+        this.checkEmployesAlerts();
+        
+        this.showNotification(`${employe.prenom} ${employe.nom} ajouté à la sélection`, 'success');
+    }
+
+    addToSelectedEmployes(employe) {
+        const container = document.getElementById('employes-selected');
+        
+        const div = document.createElement('div');
+        div.className = 'employe-item selected';
+        div.dataset.employeId = employe.id;
+        
+        const contractType = employe.disponibilite?.heuresAnnuelContractuelles === 1820 ? '35h' : '39h';
+        
+        div.innerHTML = `
+            <div class="employe-info">
+                <div class="employe-name">${employe.prenom} ${employe.nom}</div>
+                <div class="employe-details">
+                    ${contractType} - Niveau ${employe.niveau}
+                </div>
+            </div>
+            <div class="employe-actions">
+                <button class="employe-btn remove" onclick="gestPrev.removeEmployeFromSelection('${employe.id}')">
+                    <i class="fas fa-minus"></i>
+                </button>
+            </div>
+        `;
+        
+        container.appendChild(div);
+    }
+
+    removeEmployeFromSelection(employeId) {
+        const employe = this.employes.find(e => e.id === employeId);
+        if (!employe) return;
+        
+        // Supprimer de la liste des sélectionnés
+        const selectedElement = document.querySelector(`[data-employe-id="${employeId}"].selected`);
+        if (selectedElement) {
+            selectedElement.remove();
+        }
+        
+        // Mettre à jour les statistiques
+        this.updateEmployesAnalysis();
+        
+        // Vérifier les alertes
+        this.checkEmployesAlerts();
+        
+        this.showNotification(`${employe.prenom} ${employe.nom} retiré de la sélection`, 'info');
+    }
+
+    // Analyse en temps réel
+    updateEmployesAnalysis() {
+        const selectedEmployes = this.getSelectedEmployes();
+        const service = document.getElementById('planning-service').value;
+        
+        if (!service) return;
+        
+        const serviceData = this.services.find(s => s.id === service);
+        if (!serviceData) return;
+        
+        // Calculer les statistiques
+        const totalHours = this.calculateTotalHours(serviceData);
+        const selectedHours = this.calculateSelectedHours(selectedEmployes);
+        const recommendedCount = this.calculateRecommendedCount(totalHours);
+        const estimatedCost = this.calculateEstimatedCost(selectedEmployes);
+        
+        // Calculer le pourcentage de couverture
+        const coveragePercentage = totalHours > 0 ? Math.round((selectedHours / totalHours) * 100) : 0;
+        
+        // Mettre à jour l'affichage
+        document.getElementById('selected-count').textContent = selectedEmployes.length;
+        document.getElementById('recommended-count').textContent = recommendedCount;
+        document.getElementById('hours-to-cover').textContent = `${totalHours}h`;
+        document.getElementById('estimated-cost').textContent = `${estimatedCost.toLocaleString()}€`;
+        
+        // Afficher le pourcentage de couverture
+        const coverageElement = document.getElementById('coverage-percentage');
+        if (coverageElement) {
+            coverageElement.textContent = `${coveragePercentage}%`;
+            coverageElement.className = `coverage-percentage ${this.getCoverageClass(coveragePercentage)}`;
+        }
+        
+        // Mettre à jour les alertes avec analyse poussée
+        this.checkEmployesAlerts();
+    }
+
+    getCoverageClass(percentage) {
+        if (percentage < 80) return 'coverage-low';
+        if (percentage <= 100) return 'coverage-good';
+        if (percentage <= 120) return 'coverage-high';
+        return 'coverage-excessive';
+    }
+
+    checkEmployesAlerts() {
+        const selectedEmployes = this.getSelectedEmployes();
+        const service = document.getElementById('planning-service').value;
+        const saison = document.querySelector('.btn-saison.active')?.dataset.saison || 'haute';
+        
+        if (!service) return;
+        
+        const serviceData = this.services.find(s => s.id === service);
+        if (!serviceData) return;
+        
+        const alerts = [];
+        
+        // Calculs de base
+        const totalHours = this.calculateTotalHoursBySaison(serviceData, saison);
+        const selectedHours = this.calculateSelectedHours(selectedEmployes);
+        const recommendedCount = this.calculateRecommendedCount(totalHours);
+        const coveragePercentage = totalHours > 0 ? Math.round((selectedHours / totalHours) * 100) : 0;
+        
+        // === ANALYSE PUSSÉE DE LA COUVERTURE ===
+        
+        // 1. Couverture insuffisante (< 80%)
+        if (coveragePercentage < 80) {
+            const manqueHeures = Math.round(totalHours - selectedHours);
+            const manqueEmployes = Math.ceil(manqueHeures / 160); // 160h/mois par employé
+            
+            alerts.push({
+                type: 'danger',
+                message: `Couverture critique : ${coveragePercentage}% (${selectedHours}h/${totalHours}h)`,
+                details: `Il manque ${manqueHeures}h (${manqueEmployes} employé(s) supplémentaire(s) recommandé(s))`,
+                icon: 'fas fa-exclamation-triangle',
+                priority: 'haute',
+                action: 'Ajouter des employés'
+            });
+        }
+        
+        // 2. Couverture excessive (> 120%)
+        else if (coveragePercentage > 120) {
+            const surplusHeures = Math.round(selectedHours - totalHours);
+            const surplusEmployes = Math.ceil(surplusHeures / 160);
+            const coutSurplus = Math.round(surplusHeures * 15); // 15€/h estimé
+            
+            alerts.push({
+                type: 'warning',
+                message: `Sur-couverture détectée : ${coveragePercentage}% (${selectedHours}h/${totalHours}h)`,
+                details: `${surplusHeures}h en surplus (${surplusEmployes} employé(s) en trop) - Coût estimé : ${coutSurplus.toLocaleString()}€/mois`,
+                icon: 'fas fa-chart-line',
+                priority: 'moyenne',
+                action: 'Réduire l\'effectif'
+            });
+        }
+        
+        // 3. Couverture optimale (80-100%)
+        else if (coveragePercentage >= 80 && coveragePercentage <= 100) {
+            alerts.push({
+                type: 'success',
+                message: `Couverture optimale : ${coveragePercentage}%`,
+                details: `Excellent équilibre entre besoins et ressources`,
+                icon: 'fas fa-check-circle',
+                priority: 'basse',
+                action: 'Maintenir'
+            });
+        }
+        
+        // 4. Couverture légèrement élevée (100-120%)
+        else if (coveragePercentage > 100 && coveragePercentage <= 120) {
+            const surplusHeures = Math.round(selectedHours - totalHours);
+            alerts.push({
+                type: 'info',
+                message: `Couverture élevée : ${coveragePercentage}%`,
+                details: `${surplusHeures}h de marge de sécurité`,
+                icon: 'fas fa-info-circle',
+                priority: 'basse',
+                action: 'Surveiller'
+            });
+        }
+        
+        // === ANALYSE DE L'EFFECTIF ===
+        
+        // 5. Effectif insuffisant
+        if (selectedEmployes.length < recommendedCount) {
+            const manque = recommendedCount - selectedEmployes.length;
+            alerts.push({
+                type: 'danger',
+                message: `Effectif insuffisant : ${selectedEmployes.length}/${recommendedCount} employés`,
+                details: `Il manque ${manque} employé(s) pour couvrir les besoins`,
+                icon: 'fas fa-users',
+                priority: 'haute',
+                action: 'Recruter'
+            });
+        }
+        
+        // 6. Sur-effectif
+        else if (selectedEmployes.length > recommendedCount + 2) {
+            const surplus = selectedEmployes.length - recommendedCount;
+            const coutSurplus = Math.round(surplus * 2500); // 2500€/mois par employé
+            
+            alerts.push({
+                type: 'warning',
+                message: `Sur-effectif : ${selectedEmployes.length} employés pour ${recommendedCount} nécessaires`,
+                details: `${surplus} employé(s) en trop - Coût estimé : ${coutSurplus.toLocaleString()}€/mois`,
+                icon: 'fas fa-user-minus',
+                priority: 'moyenne',
+                action: 'Réduire l\'effectif'
+            });
+        }
+        
+        // === ANALYSE DES COMPÉTENCES ===
+        
+        // 7. Répartition des niveaux
+        const niveaux = this.analyzeNiveaux(selectedEmployes);
+        if (niveaux.senior < 1 && selectedEmployes.length > 2) {
+            alerts.push({
+                type: 'warning',
+                message: 'Manque de seniors',
+                details: 'Aucun employé senior (niveau IV-V) - Risque de supervision',
+                icon: 'fas fa-user-tie',
+                priority: 'moyenne',
+                action: 'Ajouter un senior'
+            });
+        }
+        
+        // 8. Répartition des contrats
+        const contrats = this.analyzeContrats(selectedEmployes);
+        if (contrats['35h'] === 0 && contrats['39h'] > 0) {
+            alerts.push({
+                type: 'info',
+                message: 'Flexibilité limitée',
+                details: 'Aucun employé 35h - Flexibilité réduite pour les pics d\'activité',
+                icon: 'fas fa-clock',
+                priority: 'basse',
+                action: 'Diversifier les contrats'
+            });
+        }
+        
+        // === ANALYSE ÉCONOMIQUE ===
+        
+        // 9. Coût par heure
+        const coutParHeure = totalHours > 0 ? Math.round(estimatedCost / totalHours) : 0;
+        if (coutParHeure > 25) {
+            alerts.push({
+                type: 'warning',
+                message: `Coût élevé : ${coutParHeure}€/h`,
+                details: `Coût horaire au-dessus de la moyenne (25€/h)`,
+                icon: 'fas fa-euro-sign',
+                priority: 'moyenne',
+                action: 'Optimiser les coûts'
+            });
+        }
+        
+        // Afficher les alertes
+        this.displayEmployesAlerts(alerts);
+        
+        // Gérer les suggestions d'auto-complétion
+        if (selectedEmployes.length < recommendedCount) {
+            this.showAutoCompletionSuggestions(recommendedCount - selectedEmployes.length);
+        } else {
+            this.hideAutoCompletionSuggestions();
+        }
+    }
+
+    analyzeNiveaux(employes) {
+        const niveaux = { 'I': 0, 'II': 0, 'III': 0, 'IV': 0, 'V': 0, 'senior': 0 };
+        
+        employes.forEach(employe => {
+            const niveau = employe.niveau;
+            if (niveaux.hasOwnProperty(niveau)) {
+                niveaux[niveau]++;
+            }
+            if (niveau === 'IV' || niveau === 'V') {
+                niveaux.senior++;
+            }
+        });
+        
+        return niveaux;
+    }
+
+    analyzeContrats(employes) {
+        const contrats = { '35h': 0, '39h': 0 };
+        
+        employes.forEach(employe => {
+            const heures = employe.disponibilite?.heuresAnnuelContractuelles || 2028;
+            if (heures === 1820) {
+                contrats['35h']++;
+            } else {
+                contrats['39h']++;
+            }
+        });
+        
+        return contrats;
+    }
+
+    calculateTotalHours(service) {
+        let totalHours = 0;
+        const joursSemaine = ['lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi', 'dimanche'];
+        const saison = document.querySelector('.btn-saison.active')?.dataset.saison || 'haute';
+        
+        joursSemaine.forEach(jour => {
+            const horaires = service.horairesParJour[jour];
+            if (horaires && horaires[saison] && horaires[saison].ouverture && horaires[saison].fermeture) {
+                const debut = this.parseTime(horaires[saison].ouverture);
+                const fin = this.parseTime(horaires[saison].fermeture);
+                
+                if (debut !== null && fin !== null) {
+                    let duree = (fin - debut) / 60; // Convertir en heures
+                    
+                    // Gérer le cas où la fermeture est le lendemain (ex: 23h00 à 02h00)
+                    if (duree < 0) {
+                        duree += 24;
+                    }
+                    
+                    totalHours += duree;
+                }
+            }
+        });
+        
+        // Retourner les heures par semaine (pas par an)
+        return Math.round(totalHours);
+    }
+
+    calculateSelectedHours(employes) {
+        return employes.reduce((total, emp) => {
+            // Utiliser les heures hebdomadaires contractuelles de l'employé
+            const heuresHebdo = emp.disponibilite?.heuresSemaineContractuelles || 35;
+            return total + heuresHebdo;
+        }, 0);
+    }
+
+    calculateRecommendedCount(totalHours) {
+        const heuresParEmploye = 35; // Base sur 35h
+        return Math.ceil(totalHours / heuresParEmploye) + 1; // +1 pour les remplacements
+    }
+
+    calculateEstimatedCost(employes) {
+        return employes.reduce((total, emp) => {
+            const tauxHoraire = emp.tauxHoraireBrut || 15;
+            const heuresHebdo = emp.disponibilite?.heuresSemaineContractuelles || 35;
+            // Calculer le coût hebdomadaire puis multiplier par 52 semaines
+            return total + (tauxHoraire * heuresHebdo * 52 * 1.45); // Avec charges
+        }, 0);
+    }
+
+    getSelectedEmployes() {
+        // Récupérer les employés sélectionnés via les checkboxes
+        const selectedCheckboxes = document.querySelectorAll('.employe-checkbox:checked');
+        return Array.from(selectedCheckboxes).map(checkbox => {
+            const employeId = checkbox.dataset.employeId;
+            return this.employes.find(e => e.id === employeId);
+        }).filter(Boolean);
+    }
+
+    clearAllEmployeSelections() {
+        // Décocher toutes les checkboxes
+        const checkboxes = document.querySelectorAll('.employe-checkbox');
+        checkboxes.forEach(checkbox => {
+            checkbox.checked = false;
+        });
+        
+        // Vider la liste des sélectionnés
+        const selectedList = document.querySelector('.selected-employes-list');
+        if (selectedList) {
+            selectedList.innerHTML = '';
+        }
+        
+        // Mettre à jour les statistiques
+        this.updateEmployesAnalysis();
+        
+        this.showNotification('Sélection des employés réinitialisée', 'info');
+    }
+
+    // Gestion des alertes
+    displayEmployesAlerts(alerts) {
+        const container = document.getElementById('employes-alerts');
+        if (!container) {
+            console.log('❌ Container employes-alerts non trouvé');
+            return;
+        }
+        
+        if (alerts.length === 0) {
+            container.innerHTML = '<p class="no-alerts">Aucune alerte - Configuration optimale</p>';
+            return;
+        }
+        
+        // Trier les alertes par priorité
+        const priorityOrder = { 'haute': 1, 'moyenne': 2, 'basse': 3 };
+        alerts.sort((a, b) => priorityOrder[a.priority] - priorityOrder[b.priority]);
+        
+        let html = '<h6><i class="fas fa-exclamation-triangle"></i> Alertes et recommandations</h6>';
+        html += '<div class="alerts-list">';
+        
+        alerts.forEach(alert => {
+            html += `
+                <div class="alert-item ${alert.type} ${alert.priority}" data-alert-type="${alert.type}">
+                    <div class="alert-header">
+                        <div class="alert-icon">
+                            <i class="${alert.icon}"></i>
+                        </div>
+                        <div class="alert-content">
+                            <div class="alert-title">${alert.message}</div>
+                            ${alert.details ? `<div class="alert-details">${alert.details}</div>` : ''}
+                        </div>
+                        <div class="alert-priority ${alert.priority}">
+                            ${alert.priority.toUpperCase()}
+                        </div>
+                    </div>
+                    <div class="alert-actions">
+                        <button class="btn btn-sm btn-primary" onclick="gestPrev.handleAlertAction('${alert.action}')">
+                            ${alert.action}
+                        </button>
+                    </div>
+                </div>
+            `;
+        });
+        
+        html += '</div>';
+        container.innerHTML = html;
+        container.style.display = 'block';
+    }
+
+    // Suggestions d'auto-complétion
+    showAutoCompletionSuggestions(count) {
+        const container = document.getElementById('auto-completion-suggestions');
+        const suggestionsList = document.getElementById('suggestions-list');
+        
+        // Trouver les employés non sélectionnés
+        const selectedIds = this.getSelectedEmployes().map(e => e.id);
+        const availableEmployes = this.employes.filter(e => !selectedIds.includes(e.id));
+        
+        // Trier par pertinence (niveau, type de contrat, etc.)
+        const suggestions = this.rankEmployesByRelevance(availableEmployes, count);
+        
+        suggestionsList.innerHTML = '';
+        suggestions.forEach(employe => {
+            const suggestionElement = document.createElement('div');
+            suggestionElement.className = 'suggestion-item';
+            suggestionElement.onclick = () => this.addEmployeToSelection(employe.id);
+            
+            const contractType = employe.disponibilite?.heuresAnnuelContractuelles === 1820 ? '35h' : '39h';
+            
+            suggestionElement.innerHTML = `
+                <i class="fas fa-user-plus"></i>
+                <span>${employe.prenom} ${employe.nom} (${contractType} - Niveau ${employe.niveau})</span>
+            `;
+            
+            suggestionsList.appendChild(suggestionElement);
+        });
+        
+        container.style.display = 'block';
+    }
+
+    hideAutoCompletionSuggestions() {
+        document.getElementById('auto-completion-suggestions').style.display = 'none';
+    }
+
+    rankEmployesByRelevance(employes, count) {
+        // Algorithme de classement par pertinence
+        return employes
+            .sort((a, b) => {
+                // Priorité 1 : Niveau (plus élevé = mieux)
+                const niveauA = parseInt(a.niveau.replace(/\D/g, ''));
+                const niveauB = parseInt(b.niveau.replace(/\D/g, ''));
+                if (niveauA !== niveauB) return niveauB - niveauA;
+                
+                // Priorité 2 : Type de contrat (35h préféré)
+                const contractA = a.disponibilite?.heuresAnnuelContractuelles === 1820 ? 1 : 0;
+                const contractB = b.disponibilite?.heuresAnnuelContractuelles === 1820 ? 1 : 0;
+                if (contractA !== contractB) return contractB - contractA;
+                
+                // Priorité 3 : Nom alphabétique
+                return a.nom.localeCompare(b.nom);
+            })
+            .slice(0, count);
+    }
+
+    // Prévisualisation
+    setupPreviewHandler() {
+        const previewBtn = document.getElementById('preview-planning');
+        if (previewBtn) {
+            previewBtn.addEventListener('click', () => {
+                this.showPlanningPreview();
+            });
+        }
+    }
+
+    showPlanningPreview() {
+        const selectedEmployes = this.getSelectedEmployes();
+        const service = document.getElementById('planning-service').value;
+        
+        if (!service || selectedEmployes.length === 0) {
+            this.showNotification('Veuillez sélectionner un service et des employés', 'error');
+            return;
+        }
+        
+        const serviceData = this.services.find(s => s.id === service);
+        if (!serviceData) return;
+        
+        // Calculer les statistiques de prévisualisation
+        const totalHours = this.calculateTotalHours(serviceData);
+        const selectedHours = this.calculateSelectedHours(selectedEmployes);
+        const estimatedCost = this.calculateEstimatedCost(selectedEmployes);
+        const coverage = Math.min(100, Math.round((selectedHours / totalHours) * 100));
+        
+        // Mettre à jour l'affichage
+        document.getElementById('preview-effectif').textContent = selectedEmployes.length;
+        document.getElementById('preview-heures').textContent = `${selectedHours}h`;
+        document.getElementById('preview-cout').textContent = `${estimatedCost.toLocaleString()}€`;
+        document.getElementById('preview-couverture').textContent = `${coverage}%`;
+        
+        // Afficher la prévisualisation
+        document.getElementById('planning-preview').style.display = 'block';
+        
+        this.showNotification('Prévisualisation générée avec succès !', 'success');
+    }
+
+    // ===== NOUVELLES FONCTIONS POUR L'INTERFACE SIMPLIFIÉE =====
+
+    // Initialisation de l'interface simplifiée
+    setupSimplifiedPlanningHandlers() {
+        console.log('🚀 Initialisation de l\'interface planning simplifiée...');
+        
+        // Gestion des boutons de saison
+        this.setupSaisonButtons();
+        
+        // Gestion des filtres d'employés
+        this.setupEmployesFilters();
+        
+        // Gestion de la sélection d'employés
+        this.setupEmployeSelectionHandlers();
+        
+        // Gestion des suggestions d'auto-complétion
+        this.setupAutoCompletionHandlers();
+        
+        // Gestion des actions de planning
+        this.setupPlanningActions();
+        
+        // Initialisation de l'analyse
+        this.updateEmployesAnalysis();
+        
+        console.log('✅ Interface planning simplifiée initialisée');
+        this.showNotification('Interface planning simplifiée initialisée', 'success');
+    }
+
+    // Gestion des boutons de saison
+    setupSaisonButtons() {
+        const saisonButtons = document.querySelectorAll('.btn-saison');
+        saisonButtons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                // Retirer la classe active de tous les boutons
+                saisonButtons.forEach(b => b.classList.remove('active'));
+                // Ajouter la classe active au bouton cliqué
+                btn.classList.add('active');
+                
+                const saison = btn.dataset.saison;
+                this.handleSaisonChange(saison);
+            });
+        });
+    }
+
+    handleSaisonChange(saison) {
+        // Mettre à jour l'analyse selon la saison
+        this.updateEmployesAnalysis();
+        this.checkEmployesAlerts();
+        
+        this.showNotification(`Saison ${saison === 'haute' ? 'haute' : 'basse'} sélectionnée`, 'info');
+    }
+
+    // Gestion de la sélection d'employés
+    setupEmployeSelectionHandlers() {
+        // Charger les employés disponibles
+        this.loadAvailableEmployesSimplified();
+        
+        // Event listeners pour les boutons d'ajout/suppression
+        document.addEventListener('click', (e) => {
+            if (e.target.closest('.employe-btn.add')) {
+                const employeId = e.target.closest('.employe-item').dataset.employeId;
+                this.addEmployeToSelectionSimplified(employeId);
+            } else if (e.target.closest('.employe-btn.remove')) {
+                const employeId = e.target.closest('.employe-item').dataset.employeId;
+                this.removeEmployeFromSelectionSimplified(employeId);
+            }
+        });
+    }
+
+    loadAvailableEmployesSimplified() {
+        const container = document.getElementById('employes-available');
+        if (!container) {
+            console.log('❌ Container employes-available non trouvé');
+            return;
+        }
+        
+        const checkboxList = container.querySelector('.employes-checkbox-list');
+        if (!checkboxList) {
+            console.log('❌ Container checkboxes non trouvé');
+            return;
+        }
+        
+        console.log('📋 Chargement des employés disponibles:', this.employes.length);
+        checkboxList.innerHTML = '';
+        
+        if (this.employes.length === 0) {
+            checkboxList.innerHTML = '<p class="no-employes">Aucun employé disponible</p>';
+            return;
+        }
+        
+        this.employes.forEach((employe, index) => {
+            console.log(`📝 Création checkbox pour employé ${index + 1}:`, employe);
+            const checkboxElement = this.createEmployeCheckbox(employe);
+            checkboxList.appendChild(checkboxElement);
+        });
+        
+        // Ajouter les event listeners pour les checkboxes
+        this.setupCheckboxListeners();
+        
+        console.log('✅ Employés chargés dans le container');
+    }
+
+    createEmployeCheckbox(employe) {
+        const div = document.createElement('div');
+        div.className = 'employe-checkbox-item';
+        
+        const contractType = employe.disponibilite?.heuresAnnuelContractuelles === 1820 ? '35h' : '39h';
+        
+        div.innerHTML = `
+            <label class="employe-checkbox-label">
+                <input type="checkbox" class="employe-checkbox" data-employe-id="${employe.id}" data-employe-name="${employe.prenom} ${employe.nom}">
+                <div class="employe-checkbox-info">
+                    <div class="employe-name">${employe.prenom} ${employe.nom}</div>
+                    <div class="employe-details">
+                        ${contractType} - Niveau ${employe.niveau} - ${employe.typeContrat}
+                    </div>
+                </div>
+            </label>
+        `;
+        
+        return div;
+    }
+
+    setupCheckboxListeners() {
+        // Supprimer les anciens listeners pour éviter les doublons
+        const checkboxes = document.querySelectorAll('.employe-checkbox');
+        checkboxes.forEach(checkbox => {
+            // Cloner l'élément pour supprimer tous les listeners
+            const newCheckbox = checkbox.cloneNode(true);
+            checkbox.parentNode.replaceChild(newCheckbox, checkbox);
+        });
+        
+        // Ajouter les nouveaux listeners
+        const newCheckboxes = document.querySelectorAll('.employe-checkbox');
+        newCheckboxes.forEach(checkbox => {
+            checkbox.addEventListener('change', (e) => {
+                const employeId = e.target.dataset.employeId;
+                const employeName = e.target.dataset.employeName;
+                const isChecked = e.target.checked;
+                
+                console.log('🖱️ Checkbox changée:', employeName, isChecked ? 'cochée' : 'décochée');
+                
+                if (isChecked) {
+                    this.addEmployeToSelectionCheckbox(employeId, employeName);
+                } else {
+                    this.removeEmployeFromSelectionCheckbox(employeId, employeName);
+                }
+            });
+        });
+        
+        console.log(`✅ ${newCheckboxes.length} checkboxes configurées`);
+    }
+
+    addEmployeToSelectionCheckbox(employeId, employeName) {
+        const employe = this.employes.find(e => e.id === employeId);
+        if (!employe) return;
+        
+        // Vérifier si l'employé n'est pas déjà dans la liste sélectionnée
+        const selectedList = document.querySelector('.selected-employes-list');
+        const existingElement = selectedList.querySelector(`[data-employe-id="${employeId}"]`);
+        if (existingElement) {
+            console.log('⚠️ Employé déjà sélectionné:', employeName);
+            return;
+        }
+        
+        // Ajouter à la liste des sélectionnés
+        const selectedElement = this.createSelectedEmployeElement(employe);
+        selectedList.appendChild(selectedElement);
+        
+        // S'assurer que la checkbox est cochée
+        const checkbox = document.querySelector(`input[type="checkbox"][data-employe-id="${employeId}"]`);
+        if (checkbox) {
+            checkbox.checked = true;
+            console.log('✅ Checkbox cochée pour:', employeName);
+        }
+        
+        // Mettre à jour les statistiques
+        this.updateEmployesAnalysis();
+        
+        // Vérifier les alertes
+        this.checkEmployesAlerts();
+        
+        this.showNotification(`${employeName} ajouté à la sélection`, 'success');
+    }
+
+    removeEmployeFromSelectionCheckbox(employeId, employeName) {
+        // Supprimer de la liste des sélectionnés
+        const selectedElement = document.querySelector(`.selected-employe-item[data-employe-id="${employeId}"]`);
+        if (selectedElement) {
+            selectedElement.remove();
+            console.log('✅ Employé retiré de la sélection:', employeName);
+        }
+        
+        // Décocher la checkbox correspondante
+        const checkbox = document.querySelector(`input[type="checkbox"][data-employe-id="${employeId}"]`);
+        if (checkbox) {
+            checkbox.checked = false;
+            console.log('✅ Checkbox décochée pour:', employeName);
+        }
+        
+        // Mettre à jour les statistiques
+        this.updateEmployesAnalysis();
+        
+        // Vérifier les alertes
+        this.checkEmployesAlerts();
+        
+        this.showNotification(`${employeName} retiré de la sélection`, 'info');
+    }
+
+    createSelectedEmployeElement(employe) {
+        const div = document.createElement('div');
+        div.className = 'selected-employe-item';
+        div.dataset.employeId = employe.id;
+        
+        const contractType = employe.disponibilite?.heuresAnnuelContractuelles === 1820 ? '35h' : '39h';
+        
+        div.innerHTML = `
+            <div class="selected-employe-info">
+                <div class="employe-name">${employe.prenom} ${employe.nom}</div>
+                <div class="employe-details">
+                    ${contractType} - Niveau ${employe.niveau}
+                </div>
+            </div>
+            <button class="remove-employe-btn" onclick="gestPrev.removeEmployeFromSelectionCheckbox('${employe.id}', '${employe.prenom} ${employe.nom}')">
+                <i class="fas fa-times"></i>
+            </button>
+        `;
+        
+        return div;
+    }
+
+    // Gestion des suggestions d'auto-complétion
+    setupAutoCompletionHandlers() {
+        const applySuggestionsBtn = document.getElementById('apply-suggestions');
+        const ignoreSuggestionsBtn = document.getElementById('ignore-suggestions');
+        
+        if (applySuggestionsBtn) {
+            applySuggestionsBtn.addEventListener('click', () => {
+                this.applyAllSuggestions();
+            });
+        }
+        
+        if (ignoreSuggestionsBtn) {
+            ignoreSuggestionsBtn.addEventListener('click', () => {
+                this.hideAutoCompletionSuggestions();
+            });
+        }
+    }
+
+    applyAllSuggestions() {
+        const suggestions = document.querySelectorAll('.suggestion-item');
+        let appliedCount = 0;
+        
+        suggestions.forEach(suggestion => {
+            const employeId = suggestion.dataset.employeId;
+            if (employeId) {
+                this.addEmployeToSelectionSimplified(employeId);
+                appliedCount++;
+            }
+        });
+        
+        this.hideAutoCompletionSuggestions();
+        this.showNotification(`${appliedCount} employé(s) ajouté(s) automatiquement`, 'success');
+    }
+
+    // Gestion des actions de planning
+    setupPlanningActions() {
+        const generateBtn = document.getElementById('generate-planning');
+        const optimizeBtn = document.getElementById('optimize-planning');
+        const previewBtn = document.getElementById('preview-planning');
+        
+        if (generateBtn) {
+            generateBtn.addEventListener('click', () => {
+                this.generateSimplifiedPlanning();
+            });
+        }
+        
+        if (optimizeBtn) {
+            optimizeBtn.addEventListener('click', () => {
+                this.optimizeSimplifiedPlanning();
+            });
+        }
+        
+        if (previewBtn) {
+            previewBtn.addEventListener('click', () => {
+                this.showSimplifiedPreview();
+            });
+        }
+    }
+
+    generateSimplifiedPlanning() {
+        const selectedEmployes = this.getSelectedEmployes();
+        const service = document.getElementById('planning-service').value;
+        const saison = document.querySelector('.btn-saison.active')?.dataset.saison || 'haute';
+        
+        if (!service || selectedEmployes.length === 0) {
+            this.showNotification('Veuillez sélectionner un service et des employés', 'warning');
+            return;
+        }
+        
+        const serviceData = this.services.find(s => s.id === service);
+        if (!serviceData) return;
+        
+        // Générer le planning annuel
+        const planningAnnuel = this.generatePlanningAnnuel(serviceData, selectedEmployes, saison);
+        
+        // Sauvegarder les données du planning pour la simulation RH
+        const planningData = {
+            service: serviceData,
+            employes: selectedEmployes,
+            saison: saison,
+            totalHeures: planningAnnuel.totalHours,
+            masseSalariale: this.calculateMasseSalarialeFromPlanning(selectedEmployes, planningAnnuel.totalHours),
+            planningAnnuel: planningAnnuel,
+            generatedAt: new Date().toISOString()
+        };
+        
+        // Sauvegarder dans le localStorage
+        localStorage.setItem('currentPlanning', JSON.stringify(planningData));
+        
+        // Afficher les résultats
+        this.displaySimplifiedPlanningResults(planningAnnuel);
+        
+        this.showNotification('Planning annuel généré avec succès ! La simulation RH peut maintenant utiliser ces données.', 'success');
+    }
+
+    generatePlanningAnnuel(service, employes, saison) {
+        const planning = {
+            service: service.name,
+            saison: saison,
+            employes: employes,
+            totalHours: this.calculateTotalHoursBySaison(service, saison),
+            planningSemaines: [],
+            statistiques: {}
+        };
+        
+        // Générer 52 semaines (1 année)
+        for (let semaine = 1; semaine <= 52; semaine++) {
+            const planningSemaine = this.generatePlanningSemaine(service, employes, saison, semaine);
+            planning.planningSemaines.push(planningSemaine);
+        }
+        
+        // Calculer les statistiques annuelles
+        planning.statistiques = this.calculateStatistiquesAnnuelles(planning);
+        
+        return planning;
+    }
+
+    generatePlanningSemaine(service, employes, saison, numeroSemaine) {
+        const planningSemaine = {
+            numero: numeroSemaine,
+            jours: [],
+            totalHeures: 0,
+            employesUtilises: []
+        };
+        
+        const joursSemaine = ['lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi', 'dimanche'];
+        
+        joursSemaine.forEach((jour, index) => {
+            const horaires = service.horairesParJour[jour];
+            if (horaires && horaires[saison] && horaires[saison].ouverture && horaires[saison].fermeture) {
+                const debut = this.parseTime(horaires[saison].ouverture);
+                const fin = this.parseTime(horaires[saison].fermeture);
+                
+                if (debut !== null && fin !== null) {
+                    let duree = (fin - debut) / 60; // Convertir en heures
+                    if (duree < 0) duree += 24;
+                    
+                    // Calculer les pauses obligatoires
+                    const pauses = this.calculatePauses(duree);
+                    
+                    // Répartir les employés selon la durée
+                    const employesNecessaires = Math.max(1, Math.ceil(duree / 8));
+                    const employesDisponibles = employes.slice(0, employesNecessaires);
+                    
+                    const planningJour = {
+                        jour: jour,
+                        ouverture: horaires[saison].ouverture,
+                        fermeture: horaires[saison].fermeture,
+                        duree: Math.round(duree * 10) / 10,
+                        pauses: pauses,
+                        employes: employesDisponibles.map(e => ({
+                            id: e.id,
+                            nom: `${e.prenom} ${e.nom}`,
+                            heures: Math.round((duree / employesDisponibles.length) * 10) / 10,
+                            debut: horaires[saison].ouverture,
+                            fin: horaires[saison].fermeture,
+                            pauses: pauses
+                        }))
+                    };
+                    
+                    planningSemaine.jours.push(planningJour);
+                    planningSemaine.totalHeures += duree;
+                    planningSemaine.employesUtilises.push(...employesDisponibles.map(e => e.id));
+                }
+            }
+        });
+        
+        // Dédupliquer les employés utilisés
+        planningSemaine.employesUtilises = [...new Set(planningSemaine.employesUtilises)];
+        
+        return planningSemaine;
+    }
+
+    calculatePauses(duree) {
+        const pauses = [];
+        
+        // Pause de 20 minutes après 6h de travail
+        if (duree > 6) {
+            pauses.push({
+                type: 'obligatoire',
+                duree: 20,
+                description: 'Pause de 20min après 6h de travail'
+            });
+        }
+        
+        // Pause déjeuner de 1h si plus de 4h
+        if (duree > 4) {
+            pauses.push({
+                type: 'dejeuner',
+                duree: 60,
+                description: 'Pause déjeuner de 1h'
+            });
+        }
+        
+        // Pause de 15 minutes toutes les 4h
+        const nombrePauses = Math.floor(duree / 4);
+        for (let i = 1; i <= nombrePauses; i++) {
+            pauses.push({
+                type: 'reguliere',
+                duree: 15,
+                description: `Pause de 15min (${i}/${nombrePauses})`
+            });
+        }
+        
+        return pauses;
+    }
+
+    generatePlanningDetails(planningSemaine) {
+        if (!planningSemaine || !planningSemaine.jours) {
+            return '<p>Aucun planning disponible</p>';
+        }
+        
+        let html = '<div class="planning-semaine">';
+        html += `<h6>Semaine ${planningSemaine.numero} - ${planningSemaine.totalHeures.toFixed(1)}h total</h6>`;
+        html += '<div class="semaine-jours">';
+        
+        planningSemaine.jours.forEach(jour => {
+            html += `
+                <div class="jour-item">
+                    <div class="jour-nom">
+                        <strong>${this.capitalizeFirst(jour.jour)}</strong>
+                    </div>
+                    <div class="jour-heures">
+                        <span class="heures-total">${jour.duree}h</span>
+                        <span class="heures-detail">${jour.ouverture} - ${jour.fermeture}</span>
+                    </div>
+                    <div class="jour-employes">
+                        ${jour.employes.map(emp => `
+                            <div class="employe-planning">
+                                <span class="employe-nom">${emp.nom}</span>
+                                <span class="employe-heures">${emp.heures}h</span>
+                                <div class="employe-horaires">
+                                    <small>${emp.debut} - ${emp.fin}</small>
+                                </div>
+                                ${emp.pauses.length > 0 ? `
+                                    <div class="employe-pauses">
+                                        ${emp.pauses.map(pause => `
+                                            <span class="pause-badge ${pause.type}">
+                                                ${pause.duree}min
+                                            </span>
+                                        `).join('')}
+                                    </div>
+                                ` : ''}
+                            </div>
+                        `).join('')}
+                    </div>
+                    ${jour.pauses.length > 0 ? `
+                        <div class="jour-pauses">
+                            <strong>Pauses :</strong>
+                            ${jour.pauses.map(pause => `
+                                <span class="pause-item ${pause.type}">
+                                    ${pause.description}
+                                </span>
+                            `).join('')}
+                        </div>
+                    ` : ''}
+                </div>
+            `;
+        });
+        
+        html += '</div></div>';
+        return html;
+    }
+
+    capitalizeFirst(str) {
+        return str.charAt(0).toUpperCase() + str.slice(1);
+    }
+
+    calculateStatistiquesAnnuelles(planning) {
+        const stats = {
+            totalHeuresAnnuelles: 0,
+            totalHeuresParEmploye: {},
+            moyenneHeuresSemaine: 0,
+            semainesActives: 0,
+            employesUtilises: new Set()
+        };
+        
+        planning.planningSemaines.forEach(semaine => {
+            if (semaine.totalHeures > 0) {
+                stats.totalHeuresAnnuelles += semaine.totalHeures;
+                stats.semainesActives++;
+                
+                semaine.jours.forEach(jour => {
+                    jour.employes.forEach(employe => {
+                        if (!stats.totalHeuresParEmploye[employe.id]) {
+                            stats.totalHeuresParEmploye[employe.id] = 0;
+                        }
+                        stats.totalHeuresParEmploye[employe.id] += employe.heures;
+                        stats.employesUtilises.add(employe.id);
+                    });
+                });
+            }
+        });
+        
+        // Calculer la moyenne par semaine
+        stats.moyenneHeuresSemaine = stats.semainesActives > 0 ? Math.round((stats.totalHeuresAnnuelles / stats.semainesActives) * 10) / 10 : 0;
+        stats.employesUtilises = Array.from(stats.employesUtilises);
+        
+        return stats;
+    }
+
+    displaySimplifiedPlanningResults(planning) {
+        const container = document.getElementById('planning-results');
+        if (!container) {
+            console.log('❌ Container planning-results non trouvé');
+            return;
+        }
+        
+        let html = `
+            <div class="planning-results-content">
+                <div class="planning-header">
+                    <h4><i class="fas fa-calendar-alt"></i> Planning Annuel - ${planning.service}</h4>
+                    <div class="planning-meta">
+                        <span class="badge badge-primary">${planning.saison.toUpperCase()}</span>
+                        <span class="badge badge-info">${planning.employes.length} employés</span>
+                        <span class="badge badge-success">${planning.totalHours}h/semaine</span>
+                    </div>
+                </div>
+                
+                <div class="planning-summary">
+                    <div class="summary-item">
+                        <i class="fas fa-clock"></i>
+                        <div>
+                            <h6>Heures annuelles</h6>
+                            <p>${planning.statistiques.totalHeuresAnnuelles.toLocaleString()}h</p>
+                        </div>
+                    </div>
+                    <div class="summary-item">
+                        <i class="fas fa-calendar-week"></i>
+                        <div>
+                            <h6>Semaines actives</h6>
+                            <p>${planning.statistiques.semainesActives}/52</p>
+                        </div>
+                    </div>
+                    <div class="summary-item">
+                        <i class="fas fa-users"></i>
+                        <div>
+                            <h6>Employés utilisés</h6>
+                            <p>${planning.statistiques.employesUtilises.length}</p>
+                        </div>
+                    </div>
+                    <div class="summary-item">
+                        <i class="fas fa-chart-line"></i>
+                        <div>
+                            <h6>Moyenne/semaine</h6>
+                            <p>${planning.statistiques.moyenneHeuresSemaine}h</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="planning-details">
+                    <h5><i class="fas fa-clock"></i> Détails du Planning - Semaine 1</h5>
+                    <div class="planning-semaines">
+                        ${this.generatePlanningDetails(planning.planningSemaines[0])}
+                    </div>
+                </div>
+                
+                <div class="timeline-container">
+                    <div class="timeline-header">
+                        <h5><i class="fas fa-chart-bar"></i> Timeline 12 mois (année)</h5>
+                    </div>
+                    
+                    <div class="timeline-content">
+                        <div class="timeline-sidebar">
+                            <div class="season-distribution">
+                                <h6>Répartition par saison</h6>
+                                <div class="season-stats">
+                                    <div class="season-item haute-saison">
+                                        <div class="season-label">Haute saison</div>
+                                        <div class="season-hours">${this.calculateHauteSaisonHours(planning)}h</div>
+                                        <div class="season-percentage">(${this.calculateHauteSaisonPercentage(planning)}%)</div>
+                                    </div>
+                                    <div class="season-item basse-saison">
+                                        <div class="season-label">Basse saison</div>
+                                        <div class="season-hours">${this.calculateBasseSaisonHours(planning)}h</div>
+                                        <div class="season-percentage">(${this.calculateBasseSaisonPercentage(planning)}%)</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="timeline-main">
+                            <div class="timeline-table">
+                                <div class="timeline-header-row">
+                                    <div class="timeline-employee-header">Employés</div>
+                                    ${this.generateMonthHeaders()}
+                                </div>
+                                ${this.generateTimelineRows(planning)}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="planning-actions">
+                    <button class="btn btn-primary" onclick="gestPrev.exportPlanningAnnuel()">
+                        <i class="fas fa-download"></i> Exporter
+                    </button>
+                    <button class="btn btn-secondary" onclick="gestPrev.printPlanningAnnuel()">
+                        <i class="fas fa-print"></i> Imprimer
+                    </button>
+                </div>
+            </div>
+        `;
+        
+        container.innerHTML = html;
+        container.style.display = 'block';
+    }
+
+    generateMonthHeaders() {
+        const mois = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'];
+        return mois.map((mois, index) => {
+            const isHauteSaison = this.isHauteSaisonMonth(index + 1);
+            const semestre = index < 6 ? 'semestre-1' : 'semestre-2';
+            return `<div class="timeline-month-header ${isHauteSaison ? 'haute-saison' : 'basse-saison'} ${semestre}">${mois}</div>`;
+        }).join('');
+    }
+
+    generateTimelineRows(planning) {
+        return planning.employes.map(employe => {
+            const employeId = employe.id;
+            const employeName = `${employe.prenom} ${employe.nom}`;
+            
+            let row = `<div class="timeline-employee-row">
+                <div class="timeline-employee-name">${employeName}</div>`;
+            
+            // Générer les données pour chaque mois
+            for (let mois = 1; mois <= 12; mois++) {
+                const heuresMois = this.calculateEmployeHoursForMonth(planning, employeId, mois);
+                const isHauteSaison = this.isHauteSaisonMonth(mois);
+                const semestre = mois <= 6 ? 'semestre-1' : 'semestre-2';
+                
+                row += `
+                    <div class="timeline-cell ${isHauteSaison ? 'haute-saison' : 'basse-saison'} ${semestre}">
+                        <div class="cell-hours">${heuresMois}h</div>
+                        <div class="cell-pause">Pause</div>
+                        <div class="cell-duration">30min</div>
+                    </div>`;
+            }
+            
+            row += '</div>';
+            return row;
+        }).join('');
+    }
+
+    calculateHauteSaisonHours(planning) {
+        // Calculer les heures de haute saison (mois 1-2, 7-10)
+        const hauteSaisonMonths = [1, 2, 7, 8, 9, 10];
+        let totalHours = 0;
+        
+        hauteSaisonMonths.forEach(mois => {
+            const semainesMois = this.getSemainesForMonth(mois);
+            semainesMois.forEach(semaineNum => {
+                const semaine = planning.planningSemaines.find(s => s.numero === semaineNum);
+                if (semaine) {
+                    totalHours += semaine.totalHeures;
+                }
+            });
+        });
+        
+        return Math.round(totalHours);
+    }
+
+    calculateBasseSaisonHours(planning) {
+        // Calculer les heures de basse saison (mois 3-6, 11-12)
+        const basseSaisonMonths = [3, 4, 5, 6, 11, 12];
+        let totalHours = 0;
+        
+        basseSaisonMonths.forEach(mois => {
+            const semainesMois = this.getSemainesForMonth(mois);
+            semainesMois.forEach(semaineNum => {
+                const semaine = planning.planningSemaines.find(s => s.numero === semaineNum);
+                if (semaine) {
+                    totalHours += semaine.totalHeures;
+                }
+            });
+        });
+        
+        return Math.round(totalHours);
+    }
+
+    calculateHauteSaisonPercentage(planning) {
+        const hauteSaisonHours = this.calculateHauteSaisonHours(planning);
+        const basseSaisonHours = this.calculateBasseSaisonHours(planning);
+        const totalHours = hauteSaisonHours + basseSaisonHours;
+        
+        return totalHours > 0 ? Math.round((hauteSaisonHours / totalHours) * 100) : 0;
+    }
+
+    calculateBasseSaisonPercentage(planning) {
+        return 100 - this.calculateHauteSaisonPercentage(planning);
+    }
+
+    isHauteSaisonMonth(mois) {
+        // Haute saison : Janvier, Février, Juillet, Août, Septembre, Octobre
+        return [1, 2, 7, 8, 9, 10].includes(mois);
+    }
+
+    getSemainesForMonth(mois) {
+        // Retourner les numéros de semaines pour un mois donné
+        const semainesParMois = {
+            1: [1, 2, 3, 4], 2: [5, 6, 7, 8], 3: [9, 10, 11, 12], 4: [13, 14, 15, 16],
+            5: [17, 18, 19, 20], 6: [21, 22, 23, 24], 7: [25, 26, 27, 28], 8: [29, 30, 31, 32],
+            9: [33, 34, 35, 36], 10: [37, 38, 39, 40], 11: [41, 42, 43, 44], 12: [45, 46, 47, 48]
+        };
+        return semainesParMois[mois] || [];
+    }
+
+    calculateEmployeHoursForMonth(planning, employeId, mois) {
+        const semainesMois = this.getSemainesForMonth(mois);
+        let totalHours = 0;
+        
+        semainesMois.forEach(semaineNum => {
+            const semaine = planning.planningSemaines.find(s => s.numero === semaineNum);
+            if (semaine) {
+                semaine.jours.forEach(jour => {
+                    const employeJour = jour.employes.find(e => e.id === employeId);
+                    if (employeJour) {
+                        totalHours += employeJour.heures;
+                    }
+                });
+            }
+        });
+        
+        return Math.round(totalHours);
+    }
+
+    optimizeSimplifiedPlanning() {
+        const selectedEmployes = this.getSelectedEmployes();
+        const service = document.getElementById('planning-service').value;
+        const saison = document.querySelector('.btn-saison.active')?.dataset.saison || 'haute';
+        
+        if (!service || selectedEmployes.length === 0) {
+            this.showNotification('Veuillez sélectionner un service et des employés', 'warning');
+            return;
+        }
+        
+        const serviceData = this.services.find(s => s.id === service);
+        if (!serviceData) return;
+        
+        // Générer les optimisations
+        const optimisations = this.generateOptimisations(serviceData, selectedEmployes, saison);
+        
+        // Afficher les optimisations
+        this.displayOptimisations(optimisations);
+    }
+
+    generateOptimisations(service, employes, saison) {
+        const optimisations = [];
+        const totalHours = this.calculateTotalHoursBySaison(service, saison);
+        const selectedHours = this.calculateSelectedHours(employes);
+        const recommendedCount = this.calculateRecommendedCount(totalHours);
+        
+        // Optimisation 1: Effectif insuffisant
+        if (employes.length < recommendedCount) {
+            const manque = recommendedCount - employes.length;
+            optimisations.push({
+                id: 'effectif-insuffisant',
+                type: 'warning',
+                titre: 'Effectif insuffisant',
+                description: `Il manque ${manque} employé(s) pour couvrir les ${totalHours}h nécessaires`,
+                impact: `+${manque} employé(s) requis`,
+                action: 'Ajouter des employés',
+                priorite: 'haute'
+            });
+        }
+        
+        // Optimisation 2: Sur-effectif
+        if (employes.length > recommendedCount + 2) {
+            const surplus = employes.length - recommendedCount;
+            optimisations.push({
+                id: 'sur-effectif',
+                type: 'info',
+                titre: 'Sur-effectif détecté',
+                description: `${surplus} employé(s) en trop pour les besoins`,
+                impact: `-${surplus} employé(s) possible`,
+                action: 'Réduire l\'effectif',
+                priorite: 'moyenne'
+            });
+        }
+        
+        // Optimisation 3: Couverture horaire insuffisante
+        if (selectedHours < totalHours * 0.8) {
+            const manqueHeures = Math.round(totalHours - selectedHours);
+            optimisations.push({
+                id: 'couverture-insuffisante',
+                type: 'danger',
+                titre: 'Couverture horaire insuffisante',
+                description: `${selectedHours}h disponibles pour ${totalHours}h nécessaires`,
+                impact: `+${manqueHeures}h à couvrir`,
+                action: 'Augmenter les heures',
+                priorite: 'haute'
+            });
+        }
+        
+        // Optimisation 4: Fermeture anticipée
+        const heuresParJour = totalHours / 7; // Approximation
+        if (heuresParJour > 10) {
+            optimisations.push({
+                id: 'fermeture-anticipée',
+                type: 'suggestion',
+                titre: 'Fermeture anticipée possible',
+                description: `Fermer 30min plus tôt permettrait de réduire l'effectif`,
+                impact: '-1 employé possible',
+                action: 'Fermer 30min plus tôt',
+                priorite: 'basse'
+            });
+        }
+        
+        // Optimisation 5: Répartition optimale
+        if (employes.length >= 3) {
+            optimisations.push({
+                id: 'repartition-optimale',
+                type: 'suggestion',
+                titre: 'Répartition optimale',
+                description: 'Répartir les heures de manière plus équitable',
+                impact: 'Meilleure répartition',
+                action: 'Optimiser la répartition',
+                priorite: 'moyenne'
+            });
+        }
+        
+        return optimisations;
+    }
+
+    displayOptimisations(optimisations) {
+        const container = document.getElementById('optimisations-container');
+        if (!container) {
+            console.log('❌ Container optimisations non trouvé');
+            return;
+        }
+        
+        if (optimisations.length === 0) {
+            container.innerHTML = '<p class="no-optimisations">Aucune optimisation nécessaire</p>';
+            return;
+        }
+        
+        let html = '<h6><i class="fas fa-magic"></i> Optimisations suggérées</h6>';
+        html += '<div class="optimisations-list">';
+        
+        optimisations.forEach(optimisation => {
+            html += `
+                <div class="optimisation-item ${optimisation.type}" data-optimisation-id="${optimisation.id}">
+                    <div class="optimisation-header">
+                        <div class="optimisation-icon">
+                            <i class="fas ${this.getOptimisationIcon(optimisation.type)}"></i>
+                        </div>
+                        <div class="optimisation-info">
+                            <h6>${optimisation.titre}</h6>
+                            <p>${optimisation.description}</p>
+                        </div>
+                        <div class="optimisation-priority ${optimisation.priorite}">
+                            ${optimisation.priorite.toUpperCase()}
+                        </div>
+                    </div>
+                    <div class="optimisation-details">
+                        <div class="optimisation-impact">
+                            <strong>Impact:</strong> ${optimisation.impact}
+                        </div>
+                        <div class="optimisation-actions">
+                            <button class="btn btn-sm btn-primary" onclick="gestPrev.applyOptimisation('${optimisation.id}')">
+                                ${optimisation.action}
+                            </button>
+                            <button class="btn btn-sm btn-outline-secondary" onclick="gestPrev.ignoreOptimisation('${optimisation.id}')">
+                                Ignorer
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+        
+        html += '</div>';
+        container.innerHTML = html;
+        
+        // Afficher le container
+        container.style.display = 'block';
+    }
+
+    getOptimisationIcon(type) {
+        const icons = {
+            'warning': 'fa-exclamation-triangle',
+            'danger': 'fa-times-circle',
+            'info': 'fa-info-circle',
+            'suggestion': 'fa-lightbulb'
+        };
+        return icons[type] || 'fa-info-circle';
+    }
+
+    applyOptimisation(optimisationId) {
+        console.log('🔧 Application de l\'optimisation:', optimisationId);
+        
+        switch (optimisationId) {
+            case 'effectif-insuffisant':
+                this.showAutoCompletionSuggestions(1);
+                break;
+            case 'sur-effectif':
+                this.showNotification('Optimisation appliquée: effectif réduit', 'success');
+                break;
+            case 'couverture-insuffisante':
+                this.showNotification('Optimisation appliquée: heures augmentées', 'success');
+                break;
+            case 'fermeture-anticipée':
+                this.showNotification('Optimisation appliquée: fermeture anticipée', 'success');
+                break;
+            case 'repartition-optimale':
+                this.showNotification('Optimisation appliquée: répartition optimisée', 'success');
+                break;
+        }
+        
+        // Masquer l'optimisation appliquée
+        const optimisationElement = document.querySelector(`[data-optimisation-id="${optimisationId}"]`);
+        if (optimisationElement) {
+            optimisationElement.style.display = 'none';
+        }
+    }
+
+    ignoreOptimisation(optimisationId) {
+        console.log('❌ Optimisation ignorée:', optimisationId);
+        
+        // Masquer l'optimisation ignorée
+        const optimisationElement = document.querySelector(`[data-optimisation-id="${optimisationId}"]`);
+        if (optimisationElement) {
+            optimisationElement.style.display = 'none';
+        }
+        
+        this.showNotification('Optimisation ignorée', 'info');
+    }
+
+    showSimplifiedPreview() {
+        const selectedEmployes = this.getSelectedEmployes();
+        const service = document.getElementById('planning-service').value;
+        
+        if (!service || selectedEmployes.length === 0) {
+            this.showNotification('Veuillez sélectionner un service et des employés', 'error');
+            return;
+        }
+        
+        const serviceData = this.services.find(s => s.id === service);
+        if (!serviceData) return;
+        
+        // Calculer les statistiques de prévisualisation avec optimisation de couverture
+        const totalHours = this.calculateTotalHours(serviceData);
+        const selectedHours = this.calculateSelectedHours(selectedEmployes);
+        const estimatedCost = this.calculateEstimatedCost(selectedEmployes);
+        
+        // Optimiser la couverture
+        const optimisation = this.optimizeCoverage(serviceData, selectedEmployes);
+        const coverage = Math.round(optimisation.couverture);
+        
+        // Calculer les heures restantes par employé
+        const heuresRestantes = selectedEmployes.map(emp => ({
+            employe: emp,
+            heuresDisponibles: this.calculateAvailableHours(emp, 1), // Semaine 1
+            heuresAffectees: this.getHeuresAffectees(emp, 1)
+        }));
+        
+        // Mettre à jour l'affichage
+        document.getElementById('preview-effectif').textContent = selectedEmployes.length;
+        document.getElementById('preview-heures').textContent = `${selectedHours}h/semaine`;
+        document.getElementById('preview-cout').textContent = `${estimatedCost.toLocaleString()}€/an`;
+        document.getElementById('preview-couverture').textContent = `${coverage}%`;
+        
+        // Afficher les heures restantes
+        this.displayAvailableHours(heuresRestantes);
+        
+        // Afficher les alertes d'optimisation
+        this.displayOptimisationAlerts(optimisation.alertes);
+        
+        // Masquer l'historique des simulations s'il était affiché
+        const historyContainer = document.getElementById('simulations-history');
+        if (historyContainer) {
+            historyContainer.style.display = 'none';
+        }
+        
+        // Afficher la prévisualisation
+        document.getElementById('planning-preview').style.display = 'block';
+        
+        // Proposer de sauvegarder la simulation
+        this.proposeSaveSimulation({
+            service: serviceData.name,
+            employes: selectedEmployes.map(e => e.id),
+            totalHours,
+            selectedHours,
+            estimatedCost,
+            coverage,
+            date: new Date().toISOString()
+        });
+        
+        this.showNotification('Prévisualisation générée avec succès !', 'success');
+    }
+
+    displayAvailableHours(heuresRestantes) {
+        const container = document.getElementById('available-hours-container');
+        if (!container) return;
+        
+        let html = '<h6><i class="fas fa-clock"></i> Heures disponibles par employé</h6>';
+        html += '<div class="available-hours-list">';
+        
+        heuresRestantes.forEach(item => {
+            const employe = item.employe;
+            const heuresDisponibles = item.heuresDisponibles;
+            const heuresAffectees = item.heuresAffectees;
+            
+            html += `
+                <div class="available-hours-item">
+                    <div class="employe-info">
+                        <strong>${employe.prenom} ${employe.nom}</strong>
+                        <span class="mode-badge ${employe.modeGestion}">${employe.modeGestion}</span>
+                    </div>
+                    <div class="hours-info">
+                        <span class="heures-affectees">Affectées: ${heuresAffectees}h</span>
+                        <span class="heures-disponibles">Disponibles: ${heuresDisponibles}h</span>
+                    </div>
+                    <div class="mode-actions">
+                        <button class="btn btn-sm btn-outline-primary" onclick="gestPrev.setEmployeMode('${employe.id}', 'manuel')">
+                            Manuel
+                        </button>
+                        <button class="btn btn-sm btn-outline-secondary" onclick="gestPrev.setEmployeMode('${employe.id}', 'semi-auto')">
+                            Semi-auto
+                        </button>
+                        <button class="btn btn-sm btn-outline-success" onclick="gestPrev.setEmployeMode('${employe.id}', 'auto')">
+                            Auto
+                        </button>
+                    </div>
+                </div>
+            `;
+        });
+        
+        html += '</div>';
+        container.innerHTML = html;
+        container.style.display = 'block';
+    }
+
+    proposeSaveSimulation(simulationData) {
+        const saveButton = document.getElementById('save-simulation-btn');
+        if (saveButton) {
+            saveButton.style.display = 'block';
+            saveButton.onclick = () => {
+                const nom = prompt('Nom de la simulation :', `Simulation ${new Date().toLocaleDateString()}`);
+                if (nom) {
+                    simulationData.nom = nom;
+                    this.saveSimulation(simulationData);
+                }
+            };
+        }
+    }
+
+    displayOptimisationAlerts(alertes) {
+        const container = document.getElementById('optimisation-alerts');
+        if (!container) return;
+        
+        if (alertes.length === 0) {
+            container.style.display = 'none';
+            return;
+        }
+        
+        let html = '<h6><i class="fas fa-exclamation-triangle"></i> Alertes d\'optimisation</h6>';
+        html += '<div class="optimisation-alerts-list">';
+        
+        alertes.forEach(alerte => {
+            html += `
+                <div class="optimisation-alerte ${alerte.type}">
+                    <i class="fas ${this.getAlertIcon(alerte.type)}"></i>
+                    <span>${alerte.message}</span>
+                </div>
+            `;
+        });
+        
+        html += '</div>';
+        container.innerHTML = html;
+        container.style.display = 'block';
+    }
+
+    getAlertIcon(type) {
+        switch (type) {
+            case 'danger': return 'fa-exclamation-circle';
+            case 'warning': return 'fa-exclamation-triangle';
+            case 'info': return 'fa-info-circle';
+            case 'success': return 'fa-check-circle';
+            default: return 'fa-info-circle';
+        }
+    }
+
+    // Mise à jour de l'analyse avec la saison
+    updateEmployesAnalysis() {
+        const selectedEmployes = this.getSelectedEmployes();
+        const service = document.getElementById('planning-service').value;
+        const saison = document.querySelector('.btn-saison.active')?.dataset.saison || 'haute';
+        
+        if (!service) return;
+        
+        const serviceData = this.services.find(s => s.id === service);
+        if (!serviceData) return;
+        
+        // Calculer les statistiques selon la saison
+        const totalHours = this.calculateTotalHoursBySaison(serviceData, saison);
+        const selectedHours = this.calculateSelectedHours(selectedEmployes);
+        const recommendedCount = this.calculateRecommendedCount(totalHours);
+        const estimatedCost = this.calculateEstimatedCost(selectedEmployes);
+        
+        // Calculer le pourcentage de couverture
+        const coveragePercentage = totalHours > 0 ? Math.round((selectedHours / totalHours) * 100) : 0;
+        
+        // Mettre à jour l'affichage
+        document.getElementById('selected-count').textContent = selectedEmployes.length;
+        document.getElementById('recommended-count').textContent = recommendedCount;
+        document.getElementById('hours-to-cover').textContent = `${totalHours}h`;
+        document.getElementById('estimated-cost').textContent = `${estimatedCost.toLocaleString()}€`;
+        
+        // Afficher le pourcentage de couverture
+        const coverageElement = document.getElementById('coverage-percentage');
+        if (coverageElement) {
+            coverageElement.textContent = `${coveragePercentage}%`;
+            coverageElement.className = `coverage-percentage ${this.getCoverageClass(coveragePercentage)}`;
+        }
+        
+        // Mettre à jour les alertes avec analyse poussée
+        this.checkEmployesAlerts();
+    }
+
+    calculateTotalHoursBySaison(service, saison) {
+        let totalHours = 0;
+        const joursSemaine = ['lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi', 'dimanche'];
+        
+        console.log('🔍 Calcul des heures pour service:', service.name, 'saison:', saison);
+        console.log('📅 Horaires du service:', service.horairesParJour);
+        
+        if (!service.horairesParJour) {
+            console.log('❌ Aucun horaire configuré pour ce service');
+            return 0;
+        }
+        
+        joursSemaine.forEach(jour => {
+            const horaires = service.horairesParJour[jour];
+            console.log(`📊 Vérification ${jour}:`, horaires);
+            
+            if (horaires && horaires[saison]) {
+                const horaireSaison = horaires[saison];
+                console.log(`📊 ${jour} ${saison}:`, horaireSaison);
+                
+                // Vérifier si le jour est fermé
+                if (horaires[`ferme${saison.charAt(0).toUpperCase() + saison.slice(1)}`]) {
+                    console.log(`🚫 ${jour} ${saison}: fermé`);
+                    return;
+                }
+                
+                if (horaireSaison && horaireSaison.ouverture && horaireSaison.fermeture) {
+                    // Utiliser parseTime qui retourne des minutes
+                    const debutMinutes = this.parseTime(horaireSaison.ouverture);
+                    const finMinutes = this.parseTime(horaireSaison.fermeture);
+                    
+                    console.log(`⏰ ${jour} ${saison}: ${horaireSaison.ouverture} -> ${debutMinutes}min, ${horaireSaison.fermeture} -> ${finMinutes}min`);
+                    
+                    if (debutMinutes !== null && finMinutes !== null) {
+                        let duree = (finMinutes - debutMinutes) / 60; // Convertir en heures
+                        
+                        // Gérer le cas où la fermeture est le lendemain (ex: 23h00 à 02h00)
+                        if (duree < 0) {
+                            duree += 24;
+                        }
+                        
+                        totalHours += duree;
+                        console.log(`✅ ${jour} ${saison}: ${horaireSaison.ouverture}-${horaireSaison.fermeture} = ${duree}h`);
+                    } else {
+                        console.log(`❌ ${jour} ${saison}: Impossible de parser les heures`);
+                    }
+                } else {
+                    console.log(`❌ ${jour} ${saison}: Horaires manquants ou incomplets`);
+                }
+            } else {
+                console.log(`❌ ${jour} ${saison}: Aucun horaire pour cette saison`);
+            }
+        });
+        
+        console.log(`✅ Total heures ${saison}: ${totalHours}h`);
+        return Math.round(totalHours);
+    }
+
+    // Vérification des alertes avec la saison
+    checkEmployesAlerts() {
+        const selectedEmployes = this.getSelectedEmployes();
+        const service = document.getElementById('planning-service').value;
+        const saison = document.querySelector('.btn-saison.active')?.dataset.saison || 'haute';
+        
+        if (!service) return;
+        
+        const serviceData = this.services.find(s => s.id === service);
+        if (!serviceData) return;
+        
+        const alerts = [];
+        
+        // Calculs de base
+        const totalHours = this.calculateTotalHoursBySaison(serviceData, saison);
+        const selectedHours = this.calculateSelectedHours(selectedEmployes);
+        const recommendedCount = this.calculateRecommendedCount(totalHours);
+        const coveragePercentage = totalHours > 0 ? Math.round((selectedHours / totalHours) * 100) : 0;
+        
+        // === ANALYSE PUSSÉE DE LA COUVERTURE ===
+        
+        // 1. Couverture insuffisante (< 80%)
+        if (coveragePercentage < 80) {
+            const manqueHeures = Math.round(totalHours - selectedHours);
+            const manqueEmployes = Math.ceil(manqueHeures / 160); // 160h/mois par employé
+            
+            alerts.push({
+                type: 'danger',
+                message: `Couverture critique : ${coveragePercentage}% (${selectedHours}h/${totalHours}h)`,
+                details: `Il manque ${manqueHeures}h (${manqueEmployes} employé(s) supplémentaire(s) recommandé(s))`,
+                icon: 'fas fa-exclamation-triangle',
+                priority: 'haute',
+                action: 'Ajouter des employés'
+            });
+        }
+        
+        // 2. Couverture excessive (> 120%)
+        else if (coveragePercentage > 120) {
+            const surplusHeures = Math.round(selectedHours - totalHours);
+            const surplusEmployes = Math.ceil(surplusHeures / 160);
+            const coutSurplus = Math.round(surplusHeures * 15); // 15€/h estimé
+            
+            alerts.push({
+                type: 'warning',
+                message: `Sur-couverture détectée : ${coveragePercentage}% (${selectedHours}h/${totalHours}h)`,
+                details: `${surplusHeures}h en surplus (${surplusEmployes} employé(s) en trop) - Coût estimé : ${coutSurplus.toLocaleString()}€/mois`,
+                icon: 'fas fa-chart-line',
+                priority: 'moyenne',
+                action: 'Réduire l\'effectif'
+            });
+        }
+        
+        // 3. Couverture optimale (80-100%)
+        else if (coveragePercentage >= 80 && coveragePercentage <= 100) {
+            alerts.push({
+                type: 'success',
+                message: `Couverture optimale : ${coveragePercentage}%`,
+                details: `Excellent équilibre entre besoins et ressources`,
+                icon: 'fas fa-check-circle',
+                priority: 'basse',
+                action: 'Maintenir'
+            });
+        }
+        
+        // 4. Couverture légèrement élevée (100-120%)
+        else if (coveragePercentage > 100 && coveragePercentage <= 120) {
+            const surplusHeures = Math.round(selectedHours - totalHours);
+            alerts.push({
+                type: 'info',
+                message: `Couverture élevée : ${coveragePercentage}%`,
+                details: `${surplusHeures}h de marge de sécurité`,
+                icon: 'fas fa-info-circle',
+                priority: 'basse',
+                action: 'Surveiller'
+            });
+        }
+        
+        // === ANALYSE DE L'EFFECTIF ===
+        
+        // 5. Effectif insuffisant
+        if (selectedEmployes.length < recommendedCount) {
+            const manque = recommendedCount - selectedEmployes.length;
+            alerts.push({
+                type: 'danger',
+                message: `Effectif insuffisant : ${selectedEmployes.length}/${recommendedCount} employés`,
+                details: `Il manque ${manque} employé(s) pour couvrir les besoins`,
+                icon: 'fas fa-users',
+                priority: 'haute',
+                action: 'Recruter'
+            });
+        }
+        
+        // 6. Sur-effectif
+        else if (selectedEmployes.length > recommendedCount + 2) {
+            const surplus = selectedEmployes.length - recommendedCount;
+            const coutSurplus = Math.round(surplus * 2500); // 2500€/mois par employé
+            
+            alerts.push({
+                type: 'warning',
+                message: `Sur-effectif : ${selectedEmployes.length} employés pour ${recommendedCount} nécessaires`,
+                details: `${surplus} employé(s) en trop - Coût estimé : ${coutSurplus.toLocaleString()}€/mois`,
+                icon: 'fas fa-user-minus',
+                priority: 'moyenne',
+                action: 'Réduire l\'effectif'
+            });
+        }
+        
+        // === ANALYSE DES COMPÉTENCES ===
+        
+        // 7. Répartition des niveaux
+        const niveaux = this.analyzeNiveaux(selectedEmployes);
+        if (niveaux.senior < 1 && selectedEmployes.length > 2) {
+            alerts.push({
+                type: 'warning',
+                message: 'Manque de seniors',
+                details: 'Aucun employé senior (niveau IV-V) - Risque de supervision',
+                icon: 'fas fa-user-tie',
+                priority: 'moyenne',
+                action: 'Ajouter un senior'
+            });
+        }
+        
+        // 8. Répartition des contrats
+        const contrats = this.analyzeContrats(selectedEmployes);
+        if (contrats['35h'] === 0 && contrats['39h'] > 0) {
+            alerts.push({
+                type: 'info',
+                message: 'Flexibilité limitée',
+                details: 'Aucun employé 35h - Flexibilité réduite pour les pics d\'activité',
+                icon: 'fas fa-clock',
+                priority: 'basse',
+                action: 'Diversifier les contrats'
+            });
+        }
+        
+        // === ANALYSE ÉCONOMIQUE ===
+        
+        // 9. Coût par heure
+        const coutParHeure = totalHours > 0 ? Math.round(estimatedCost / totalHours) : 0;
+        if (coutParHeure > 25) {
+            alerts.push({
+                type: 'warning',
+                message: `Coût élevé : ${coutParHeure}€/h`,
+                details: `Coût horaire au-dessus de la moyenne (25€/h)`,
+                icon: 'fas fa-euro-sign',
+                priority: 'moyenne',
+                action: 'Optimiser les coûts'
+            });
+        }
+        
+        // Afficher les alertes
+        this.displayEmployesAlerts(alerts);
+        
+        // Gérer les suggestions d'auto-complétion
+        if (selectedEmployes.length < recommendedCount) {
+            this.showAutoCompletionSuggestions(recommendedCount - selectedEmployes.length);
+        } else {
+            this.hideAutoCompletionSuggestions();
+        }
+    }
+
+    // ===== GÉNÉRATION DE PLANNING DÉTAILLÉ AVEC HEURES ET PAUSES =====
+    generateDetailedPlanning() {
+        const serviceSelect = document.getElementById('planning-service');
+        const saisonActive = document.querySelector('.btn-saison.active')?.dataset.saison || 'haute';
+        const selectedEmployes = this.getSelectedEmployes();
+
+        if (!serviceSelect || !serviceSelect.value) {
+            this.showNotification('Veuillez sélectionner un service', 'error');
+            return;
+        }
+
+        if (selectedEmployes.length === 0) {
+            this.showNotification('Veuillez sélectionner au moins un employé', 'error');
+            return;
+        }
+
+        const service = this.services.find(s => s.id === serviceSelect.value);
+        const employes = this.employes.filter(e => selectedEmployes.includes(e.id));
+
+        // Générer le planning détaillé
+        const planning = this.generateDetailedPlanningData(service, employes, saisonActive);
+        this.displayDetailedPlanning(planning);
+        
+        this.showNotification('Planning détaillé généré avec succès !', 'success');
+    }
+
+    generateDetailedPlanningData(service, employes, saison) {
+        const planning = {
+            service: service,
+            employes: employes,
+            saison: saison,
+            semaines: []
+        };
+
+        // Générer planning pour 4 semaines en détail
+        for (let semaine = 1; semaine <= 4; semaine++) {
+            const planningSemaine = this.generateDetailedWeekPlanning(service, employes, saison, semaine);
+            planning.semaines.push(planningSemaine);
+        }
+
+        return planning;
+    }
+
+    generateDetailedWeekPlanning(service, employes, saison, numeroSemaine) {
+        const planningSemaine = {
+            numero: numeroSemaine,
+            jours: []
+        };
+
+        const joursSemaine = ['lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi', 'dimanche'];
+        
+        joursSemaine.forEach((jour, index) => {
+            const horairesJour = service.horairesParJour[jour];
+            const planningJour = {
+                nom: jour,
+                horaires: horairesJour,
+                shifts: []
+            };
+
+            if (horairesJour && horairesJour[saison] && !horairesJour[`ferme${saison.charAt(0).toUpperCase() + saison.slice(1)}`]) {
+                const horaires = horairesJour[saison];
+                const shifts = this.calculateDetailedShifts(horaires, employes, jour);
+                planningJour.shifts = shifts;
+            }
+
+            planningSemaine.jours.push(planningJour);
+        });
+
+        return planningSemaine;
+    }
+
+    calculateDetailedShifts(horaires, employes, jour) {
+        const shifts = [];
+        const debut = this.parseTime(horaires.ouverture);
+        const fin = this.parseTime(horaires.fermeture);
+        const dureeTotale = (fin - debut) / 60;
+
+        // Répartir les employés selon leur mode de gestion
+        const employesManuel = employes.filter(emp => emp.modeGestion === 'manuel');
+        const employesSemiAuto = employes.filter(emp => emp.modeGestion === 'semi-auto');
+        const employesAuto = employes.filter(emp => emp.modeGestion === 'auto');
+
+        // Créer des créneaux détaillés
+        const creneaux = this.createDetailedCreneaux(debut, fin, dureeTotale);
+
+        creneaux.forEach((creneau, index) => {
+            // Assigner un employé selon le mode de gestion
+            let employe = null;
+            if (employesManuel.length > 0 && index < employesManuel.length) {
+                employe = employesManuel[index];
+            } else if (employesSemiAuto.length > 0) {
+                employe = employesSemiAuto[index % employesSemiAuto.length];
+            } else if (employesAuto.length > 0) {
+                employe = employesAuto[index % employesAuto.length];
+            }
+
+            if (employe) {
+                const pauses = this.calculatePauses(creneau.duree);
+                shifts.push({
+                    employe: employe,
+                    debut: creneau.debut,
+                    fin: creneau.fin,
+                    duree: creneau.duree,
+                    pauses: pauses,
+                    type: this.getShiftType(creneau.duree)
+                });
+            }
+        });
+
+        return shifts;
+    }
+
+    createDetailedCreneaux(debut, fin, dureeTotale) {
+        const creneaux = [];
+        let heureActuelle = debut;
+
+        // Créer des créneaux de 4-6 heures maximum
+        while (heureActuelle < fin) {
+            const dureeCreneau = Math.min(6, fin - heureActuelle);
+            const finCreneau = heureActuelle + dureeCreneau;
+
+            creneaux.push({
+                debut: this.formatTime(heureActuelle),
+                fin: this.formatTime(finCreneau),
+                duree: dureeCreneau / 60
+            });
+
+            heureActuelle = finCreneau;
+        }
+
+        return creneaux;
+    }
+
+    formatTime(minutes) {
+        const heures = Math.floor(minutes / 60);
+        const mins = minutes % 60;
+        return `${heures.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`;
+    }
+
+    // ===== AFFICHAGE DÉTAILLÉ DU PLANNING =====
+    displayDetailedPlanning(planning) {
+        const planningContainer = document.getElementById('planning-results');
+        if (!planningContainer) return;
+
+        const planningHTML = this.generateDetailedPlanningHTML(planning);
+        planningContainer.innerHTML = planningHTML;
+    }
+
+    generateDetailedPlanningHTML(planning) {
+        return `
+            <div class="planning-results-content">
+                <div class="planning-header">
+                    <h4>
+                        <i class="fas fa-calendar-alt"></i>
+                        Planning détaillé - ${planning.service.name}
+                    </h4>
+                    <div class="planning-meta">
+                        <span class="badge badge-primary">${planning.saison === 'haute' ? 'Haute saison' : 'Basse saison'}</span>
+                        <span class="badge badge-info">${planning.employes.length} employés</span>
+                    </div>
+                </div>
+
+                <div class="planning-summary">
+                    ${this.generatePlanningSummary(planning)}
+                </div>
+
+                <div class="planning-details">
+                    ${this.generateDetailedTimeline(planning)}
+                </div>
+
+                <div class="planning-actions">
+                    <button class="btn btn-primary" onclick="gestPrev.saveCurrentScenario()">
+                        <i class="fas fa-save"></i> Sauvegarder ce scénario
+                    </button>
+                    <button class="btn btn-secondary" onclick="gestPrev.exportPlanning()">
+                        <i class="fas fa-download"></i> Exporter
+                    </button>
+                </div>
+            </div>
+        `;
+    }
+
+    generatePlanningSummary(planning) {
+        const totalHeures = planning.semaines.reduce((total, semaine) => {
+            return total + semaine.jours.reduce((jourTotal, jour) => {
+                return jourTotal + jour.shifts.reduce((shiftTotal, shift) => {
+                    return shiftTotal + shift.duree;
+                }, 0);
+            }, 0);
+        }, 0);
+
+        const totalPauses = planning.semaines.reduce((total, semaine) => {
+            return total + semaine.jours.reduce((jourTotal, jour) => {
+                return jourTotal + jour.shifts.reduce((shiftTotal, shift) => {
+                    return shiftTotal + shift.pauses.reduce((pauseTotal, pause) => {
+                        return pauseTotal + pause.duree;
+                    }, 0);
+                }, 0);
+            }, 0);
+        }, 0);
+
+        return `
+            <div class="summary-item">
+                <i class="fas fa-clock"></i>
+                <div>
+                    <h6>Heures totales</h6>
+                    <p>${totalHeures.toFixed(1)}h</p>
+                </div>
+            </div>
+            <div class="summary-item">
+                <i class="fas fa-coffee"></i>
+                <div>
+                    <h6>Pauses totales</h6>
+                    <p>${totalPauses.toFixed(1)}h</p>
+                </div>
+            </div>
+            <div class="summary-item">
+                <i class="fas fa-users"></i>
+                <div>
+                    <h6>Employés actifs</h6>
+                    <p>${planning.employes.length}</p>
+                </div>
+            </div>
+        `;
+    }
+
+    generateDetailedTimeline(planning) {
+        return `
+            <div class="planning-semaines">
+                ${planning.semaines.map(semaine => this.generateSemaineHTML(semaine)).join('')}
+            </div>
+        `;
+    }
+
+    generateSemaineHTML(semaine) {
+        return `
+            <div class="planning-semaine">
+                <h6>Semaine ${semaine.numero}</h6>
+                <div class="semaine-jours">
+                    ${semaine.jours.map(jour => this.generateJourHTML(jour)).join('')}
+                </div>
+            </div>
+        `;
+    }
+
+    generateJourHTML(jour) {
+        if (jour.shifts.length === 0) {
+            return `
+                <div class="jour-item ferme">
+                    <div class="jour-nom">${this.capitalizeFirst(jour.nom)}</div>
+                    <div class="jour-heures">Fermé</div>
+                </div>
+            `;
+        }
+
+        const totalHeures = jour.shifts.reduce((total, shift) => total + shift.duree, 0);
+        const totalPauses = jour.shifts.reduce((total, shift) => {
+            return total + shift.pauses.reduce((pauseTotal, pause) => pauseTotal + pause.duree, 0);
+        }, 0);
+
+        return `
+            <div class="jour-item">
+                <div class="jour-nom">${this.capitalizeFirst(jour.nom)}</div>
+                <div class="jour-heures">
+                    <div class="heures-total">${totalHeures.toFixed(1)}h</div>
+                    <div class="heures-detail">
+                        ${jour.shifts.map(shift => `
+                            <div class="shift-detail">
+                                <span class="employe-nom">${shift.employe.prenom} ${shift.employe.nom}</span>
+                                <span class="shift-horaires">${shift.debut}-${shift.fin}</span>
+                                <span class="shift-duree">${shift.duree.toFixed(1)}h</span>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+                <div class="jour-pauses">
+                    ${jour.shifts.map(shift => `
+                        <div class="employe-pauses">
+                            <span class="employe-nom">${shift.employe.prenom} ${shift.employe.nom}</span>
+                            ${shift.pauses.map(pause => `
+                                <span class="pause-badge ${pause.type}">${pause.description}</span>
+                            `).join('')}
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        `;
+    }
+
+    // ===== FONCTIONS DE SIMULATION RH AVANCÉE =====
+    calculateAdvancedRHSimulationFromPlanning(planningData, periode, tauxCharges, caEstime, margeObjectif) {
+        // === DONNÉES DU PLANNING RÉEL ===
+        const { service, employes, totalHeures, masseSalariale } = planningData;
+        
+        // === ANALYSE DES COMPÉTENCES ET NIVEAUX ===
+        const analyseCompetences = this.analyzeCompetences();
+        const analyseNiveaux = this.analyzeNiveaux(employes);
+        const analyseContrats = this.analyzeContrats(employes);
+        
+        // === CALCULS RH BASÉS SUR LE PLANNING RÉEL ===
+        const totalHeuresServices = totalHeures; // Heures réelles du planning
+        const totalCoutEmployes = masseSalariale; // Masse salariale réelle du planning
+
+        // === GESTION DES CONGÉS ET REPOS ===
+        const gestionConges = this.calculateGestionCongesFromPlanning(employes, periode);
+        
+        // === ROTATION ET FLEXIBILITÉ ===
+        const rotationEquipes = this.calculateRotationEquipesFromPlanning(service, employes);
+        
+        // === INDICATEURS DE PERFORMANCE RH ===
+        const indicateursRH = this.calculateIndicateursRHFromPlanning(totalHeuresServices, totalCoutEmployes, employes);
+        
+        // === SIMULATIONS DE SCÉNARIOS ===
+        const scenarios = this.generateRHScenariosFromPlanning(planningData, periode, tauxCharges, caEstime, margeObjectif);
+        
+        // === ANALYSE DES RISQUES RH ===
+        const analyseRisques = this.analyzeRisquesRHFromPlanning(planningData);
+        
+        // === CALCULS FINANCIERS AVANCÉS ===
+        const chargesSociales = totalCoutEmployes * (tauxCharges / 100);
+        const coutTotal = totalCoutEmployes + chargesSociales;
+        const coutHoraireMoyen = totalHeuresServices > 0 ? coutTotal / totalHeuresServices : 0;
+        
+        const margeBrute = caEstime - coutTotal;
+        const margeBrutePourcentage = caEstime > 0 ? (margeBrute / caEstime) * 100 : 0;
+        const objectifMarge = (caEstime * margeObjectif) / 100;
+        const ecartMarge = margeBrute - objectifMarge;
+        
+        const ratioCoutCA = caEstime > 0 ? (coutTotal / caEstime) * 100 : 0;
+        const productiviteHoraire = totalHeuresServices > 0 ? caEstime / totalHeuresServices : 0;
+
+        return {
+            // === DONNÉES DE BASE ===
+            periode: periode,
+            tauxCharges: tauxCharges,
+            caEstime: caEstime,
+            margeObjectif: margeObjectif,
+            totalHeuresServices: totalHeuresServices,
+            totalCoutEmployes: totalCoutEmployes,
+            chargesSociales: chargesSociales,
+            coutTotal: coutTotal,
+            
+            // === DONNÉES DU PLANNING ===
+            planningData: planningData,
+            
+            // === ANALYSES RH ===
+            analyseCompetences: analyseCompetences,
+            analyseNiveaux: analyseNiveaux,
+            analyseContrats: analyseContrats,
+            gestionConges: gestionConges,
+            rotationEquipes: rotationEquipes,
+            indicateursRH: indicateursRH,
+            analyseRisques: analyseRisques,
+            
+            // === SCÉNARIOS ===
+            scenarios: scenarios,
+            
+            // === INDICATEURS FINANCIERS ===
+            coutHoraireMoyen: coutHoraireMoyen,
+            margeBrute: margeBrute,
+            margeBrutePourcentage: margeBrutePourcentage,
+            objectifMarge: objectifMarge,
+            ecartMarge: ecartMarge,
+            ratioCoutCA: ratioCoutCA,
+            productiviteHoraire: productiviteHoraire,
+            
+            // === ALERTES ===
+            alertes: this.generateAdvancedRHAlertes(analyseCompetences, analyseRisques, indicateursRH, margeBrutePourcentage, ratioCoutCA)
+        };
+    }
+
+    calculateAdvancedRHSimulation(periode, tauxCharges, caEstime, margeObjectif) {
+        // === ANALYSE DES COMPÉTENCES ET NIVEAUX ===
+        const analyseCompetences = this.analyzeCompetences();
+        const analyseNiveaux = this.analyzeNiveaux(this.employes);
+        const analyseContrats = this.analyzeContrats(this.employes);
+        
+        // === CALCULS RH AVANCÉS ===
+        const totalHeuresServices = this.services.reduce((total, service) => {
+            const heuresSemaine = this.calculateHeuresSemaine(service);
+            return total + heuresSemaine.haute + heuresSemaine.basse;
+        }, 0);
+
+        const totalCoutEmployes = this.employes.reduce((total, employe) => {
+            return total + (employe.salaireHoraire * employe.disponibilite.heuresAnnuelContractuelles * periode / 12);
+        }, 0);
+
+        // === GESTION DES CONGÉS ET REPOS ===
+        const gestionConges = this.calculateGestionConges(periode);
+        
+        // === ROTATION ET FLEXIBILITÉ ===
+        const rotationEquipes = this.calculateRotationEquipes();
+        
+        // === INDICATEURS DE PERFORMANCE RH ===
+        const indicateursRH = this.calculateIndicateursRH(totalHeuresServices, totalCoutEmployes);
+        
+        // === SIMULATIONS DE SCÉNARIOS ===
+        const scenarios = this.generateRHScenarios(periode, tauxCharges, caEstime, margeObjectif);
+        
+        // === ANALYSE DES RISQUES RH ===
+        const analyseRisques = this.analyzeRisquesRH();
+        
+        // === CALCULS FINANCIERS AVANCÉS ===
+        const chargesSociales = totalCoutEmployes * (tauxCharges / 100);
+        const coutTotal = totalCoutEmployes + chargesSociales;
+        const coutHoraireMoyen = totalHeuresServices > 0 ? coutTotal / totalHeuresServices : 0;
+        
+        const margeBrute = caEstime - coutTotal;
+        const margeBrutePourcentage = caEstime > 0 ? (margeBrute / caEstime) * 100 : 0;
+        const objectifMarge = (caEstime * margeObjectif) / 100;
+        const ecartMarge = margeBrute - objectifMarge;
+        
+        const ratioCoutCA = caEstime > 0 ? (coutTotal / caEstime) * 100 : 0;
+        const productiviteHoraire = totalHeuresServices > 0 ? caEstime / totalHeuresServices : 0;
+
+        return {
+            // === DONNÉES DE BASE ===
+            periode: periode,
+            tauxCharges: tauxCharges,
+            caEstime: caEstime,
+            margeObjectif: margeObjectif,
+            totalHeuresServices: totalHeuresServices,
+            totalCoutEmployes: totalCoutEmployes,
+            chargesSociales: chargesSociales,
+            coutTotal: coutTotal,
+            
+            // === ANALYSES RH ===
+            analyseCompetences: analyseCompetences,
+            analyseNiveaux: analyseNiveaux,
+            analyseContrats: analyseContrats,
+            gestionConges: gestionConges,
+            rotationEquipes: rotationEquipes,
+            indicateursRH: indicateursRH,
+            analyseRisques: analyseRisques,
+            
+            // === SCÉNARIOS ===
+            scenarios: scenarios,
+            
+            // === INDICATEURS FINANCIERS ===
+            coutHoraireMoyen: coutHoraireMoyen,
+            margeBrute: margeBrute,
+            margeBrutePourcentage: margeBrutePourcentage,
+            objectifMarge: objectifMarge,
+            ecartMarge: ecartMarge,
+            ratioCoutCA: ratioCoutCA,
+            productiviteHoraire: productiviteHoraire,
+            
+            // === ALERTES ===
+            alertes: this.generateAdvancedRHAlertes(analyseCompetences, analyseRisques, indicateursRH, margeBrutePourcentage, ratioCoutCA)
+        };
+    }
+
+    analyzeCompetences() {
+        const competences = {};
+        
+        this.employes.forEach(employe => {
+            if (employe.competences) {
+                employe.competences.forEach(competence => {
+                    if (!competences[competence]) {
+                        competences[competence] = {
+                            count: 0,
+                            employes: [],
+                            niveauMoyen: 0
+                        };
+                    }
+                    competences[competence].count++;
+                    competences[competence].employes.push(employe);
+                    competences[competence].niveauMoyen += this.getNiveauValue(employe.niveau);
+                });
+            }
+        });
+
+        // Calculer les niveaux moyens
+        Object.keys(competences).forEach(competence => {
+            competences[competence].niveauMoyen = competences[competence].niveauMoyen / competences[competence].count;
+        });
+
+        return competences;
+    }
+
+    getNiveauValue(niveau) {
+        const niveaux = {
+            'Stagiaire': 1,
+            'Employé': 2,
+            'Chef d\'équipe': 3,
+            'Chef de service': 4,
+            'Manager': 5
+        };
+        return niveaux[niveau] || 2;
+    }
+
+    calculateGestionConges(periode) {
+        const totalEmployes = this.employes.length;
+        const joursCongesParEmploye = 25; // Congés payés
+        const joursReposHebdo = 104; // 52 semaines * 2 jours
+        const joursFeries = 11;
+        
+        const totalJoursConges = totalEmployes * joursCongesParEmploye;
+        const totalJoursRepos = totalEmployes * joursReposHebdo;
+        const totalJoursFeries = totalEmployes * joursFeries;
+        
+        const joursDisponibles = 365 * periode;
+        const joursNonDisponibles = totalJoursConges + totalJoursRepos + totalJoursFeries;
+        const tauxDisponibilite = ((joursDisponibles - joursNonDisponibles) / joursDisponibles) * 100;
+        
+        return {
+            totalJoursConges: totalJoursConges,
+            totalJoursRepos: totalJoursRepos,
+            totalJoursFeries: totalJoursFeries,
+            joursDisponibles: joursDisponibles,
+            joursNonDisponibles: joursNonDisponibles,
+            tauxDisponibilite: tauxDisponibilite,
+            repartition: {
+                congés: totalJoursConges,
+                repos: totalJoursRepos,
+                fériés: totalJoursFeries,
+                travail: joursDisponibles - joursNonDisponibles
+            }
+        };
+    }
+
+    calculateRotationEquipes() {
+        const rotation = {
+            hauteSaison: {
+                effectifNecessaire: 0,
+                effectifDisponible: 0,
+                tauxRotation: 0,
+                flexibilite: 0
+            },
+            basseSaison: {
+                effectifNecessaire: 0,
+                effectifDisponible: 0,
+                tauxRotation: 0,
+                flexibilite: 0
+            }
+        };
+
+        // Calculer les besoins par saison
+        this.services.forEach(service => {
+            const heuresHaute = this.calculateHeuresSemaine(service).haute;
+            const heuresBasse = this.calculateHeuresSemaine(service).basse;
+            
+            rotation.hauteSaison.effectifNecessaire += Math.ceil(heuresHaute / 35);
+            rotation.basseSaison.effectifNecessaire += Math.ceil(heuresBasse / 35);
+        });
+
+        // Calculer la disponibilité
+        const employesFlexibles = this.employes.filter(emp => emp.disponibilite.heuresAnnuelContractuelles === 1820);
+        const employesStandard = this.employes.filter(emp => emp.disponibilite.heuresAnnuelContractuelles === 2028);
+        
+        rotation.hauteSaison.effectifDisponible = this.employes.length;
+        rotation.basseSaison.effectifDisponible = this.employes.length;
+        
+        // Calculer les taux de rotation
+        rotation.hauteSaison.tauxRotation = rotation.hauteSaison.effectifNecessaire > 0 
+            ? (rotation.hauteSaison.effectifDisponible / rotation.hauteSaison.effectifNecessaire) * 100 
+            : 0;
+        rotation.basseSaison.tauxRotation = rotation.basseSaison.effectifNecessaire > 0 
+            ? (rotation.basseSaison.effectifDisponible / rotation.basseSaison.effectifNecessaire) * 100 
+            : 0;
+        
+        // Calculer la flexibilité
+        rotation.hauteSaison.flexibilite = (employesFlexibles.length / this.employes.length) * 100;
+        rotation.basseSaison.flexibilite = (employesFlexibles.length / this.employes.length) * 100;
+
+        return rotation;
+    }
+
+    calculateIndicateursRH(totalHeures, totalCout) {
+        const totalEmployes = this.employes.length;
+        const heuresParEmploye = totalHeures / totalEmployes;
+        const coutParEmploye = totalCout / totalEmployes;
+        const productiviteEmploye = totalHeures > 0 ? totalCout / totalHeures : 0;
+        
+        // Taux de turnover estimé (industrie hôtelière)
+        const tauxTurnover = 25; // 25% par an
+        
+        // Coût de recrutement moyen
+        const coutRecrutement = 3000; // € par recrutement
+        const recrutementsAnnuels = Math.ceil(totalEmployes * (tauxTurnover / 100));
+        const coutRecrutementTotal = recrutementsAnnuels * coutRecrutement;
+        
+        // Coût de formation
+        const coutFormationParEmploye = 1500; // € par an
+        const coutFormationTotal = totalEmployes * coutFormationParEmploye;
+        
+        // Indice de satisfaction estimé
+        const satisfaction = this.calculateSatisfactionEmployes();
+        
+        return {
+            totalEmployes: totalEmployes,
+            heuresParEmploye: heuresParEmploye,
+            coutParEmploye: coutParEmploye,
+            productiviteEmploye: productiviteEmploye,
+            tauxTurnover: tauxTurnover,
+            coutRecrutementTotal: coutRecrutementTotal,
+            coutFormationTotal: coutFormationTotal,
+            satisfaction: satisfaction,
+            coutRHTotal: totalCout + coutRecrutementTotal + coutFormationTotal
+        };
+    }
+
+    calculateSatisfactionEmployes() {
+        let satisfaction = 0;
+        let facteurs = 0;
+        
+        // Facteur 1: Équilibre travail/vie
+        const heuresMoyennes = this.employes.reduce((sum, emp) => sum + emp.disponibilite.heuresSemaineContractuelles, 0) / this.employes.length;
+        const satisfactionEquilibre = heuresMoyennes <= 35 ? 90 : heuresMoyennes <= 39 ? 75 : 60;
+        satisfaction += satisfactionEquilibre;
+        facteurs++;
+        
+        // Facteur 2: Diversité des compétences
+        const competences = this.analyzeCompetences();
+        const diversiteCompetences = Object.keys(competences).length;
+        const satisfactionDiversite = Math.min(90, diversiteCompetences * 15);
+        satisfaction += satisfactionDiversite;
+        facteurs++;
+        
+        // Facteur 3: Niveaux de responsabilité
+        const niveaux = this.analyzeNiveaux(this.employes);
+        const satisfactionNiveaux = niveaux.senior > 0 ? 85 : 60;
+        satisfaction += satisfactionNiveaux;
+        facteurs++;
+        
+        return satisfaction / facteurs;
+    }
+
+    generateRHScenarios(periode, tauxCharges, caEstime, margeObjectif) {
+        const scenarios = [];
+        
+        // Scénario 1: Optimisation des coûts
+        const scenarioOptimisation = {
+            nom: "Optimisation des coûts",
+            description: "Réduction des coûts RH de 15%",
+            impact: {
+                coutReduction: 0.15,
+                productivite: 1.05,
+                satisfaction: 0.95
+            }
+        };
+        
+        // Scénario 2: Amélioration de la productivité
+        const scenarioProductivite = {
+            nom: "Amélioration de la productivité",
+            description: "Formation et optimisation des processus",
+            impact: {
+                coutReduction: 0.05,
+                productivite: 1.20,
+                satisfaction: 1.10
+            }
+        };
+        
+        // Scénario 3: Flexibilité maximale
+        const scenarioFlexibilite = {
+            nom: "Flexibilité maximale",
+            description: "Plus d'employés 35h et rotation",
+            impact: {
+                coutReduction: 0.10,
+                productivite: 1.15,
+                satisfaction: 1.15
+            }
+        };
+        
+        // Calculer les impacts pour chaque scénario
+        [scenarioOptimisation, scenarioProductivite, scenarioFlexibilite].forEach(scenario => {
+            const coutBase = this.employes.reduce((total, emp) => {
+                return total + (emp.salaireHoraire * emp.disponibilite.heuresAnnuelContractuelles * periode / 12);
+            }, 0);
+            
+            const coutScenario = coutBase * (1 - scenario.impact.coutReduction);
+            const chargesScenario = coutScenario * (tauxCharges / 100);
+            const coutTotalScenario = coutScenario + chargesScenario;
+            
+            const margeScenario = caEstime - coutTotalScenario;
+            const margePourcentageScenario = caEstime > 0 ? (margeScenario / caEstime) * 100 : 0;
+            
+            scenario.resultats = {
+                coutReduction: scenario.impact.coutReduction * 100,
+                margePourcentage: margePourcentageScenario,
+                ecartObjectif: margePourcentageScenario - margeObjectif,
+                economies: coutBase - coutScenario
+            };
+            
+            scenarios.push(scenario);
+        });
+        
+        return scenarios;
+    }
+
+    analyzeRisquesRH() {
+        const risques = [];
+        
+        // Risque 1: Sous-effectif
+        const totalHeures = this.services.reduce((total, service) => {
+            const heuresSemaine = this.calculateHeuresSemaine(service);
+            return total + heuresSemaine.haute + heuresSemaine.basse;
+        }, 0);
+        
+        const effectifNecessaire = Math.ceil(totalHeures / 35);
+        if (this.employes.length < effectifNecessaire) {
+            risques.push({
+                type: 'danger',
+                niveau: 'Élevé',
+                description: `Sous-effectif : ${this.employes.length}/${effectifNecessaire} employés`,
+                impact: 'Risque de surcharge et turnover',
+                recommandation: 'Recruter des employés supplémentaires'
+            });
+        }
+        
+        // Risque 2: Manque de seniors
+        const niveaux = this.analyzeNiveaux(this.employes);
+        if (niveaux.senior < 1 && this.employes.length > 2) {
+            risques.push({
+                type: 'warning',
+                niveau: 'Moyen',
+                description: 'Aucun employé senior',
+                impact: 'Manque de supervision et expertise',
+                recommandation: 'Promouvoir ou recruter des seniors'
+            });
+        }
+        
+        // Risque 3: Coût horaire élevé
+        const coutHoraireMoyen = this.employes.reduce((sum, emp) => sum + emp.salaireHoraire, 0) / this.employes.length;
+        if (coutHoraireMoyen > 25) {
+            risques.push({
+                type: 'warning',
+                niveau: 'Moyen',
+                description: `Coût horaire élevé : ${coutHoraireMoyen.toFixed(2)}€/h`,
+                impact: 'Rentabilité compromise',
+                recommandation: 'Optimiser la structure salariale'
+            });
+        }
+        
+        // Risque 4: Manque de flexibilité
+        const employes35h = this.employes.filter(emp => emp.disponibilite.heuresAnnuelContractuelles === 1820);
+        if (employes35h.length === 0) {
+            risques.push({
+                type: 'info',
+                niveau: 'Faible',
+                description: 'Aucun employé 35h',
+                impact: 'Flexibilité limitée pour les pics',
+                recommandation: 'Diversifier les contrats'
+            });
+        }
+        
+        return risques;
+    }
+
+    generateAdvancedRHAlertes(analyseCompetences, analyseRisques, indicateursRH, margePourcentage, ratioCoutCA) {
+        const alertes = [];
+        
+        // Alertes basées sur les compétences
+        Object.entries(analyseCompetences).forEach(([competence, data]) => {
+            if (data.count === 1) {
+                alertes.push({
+                    type: 'warning',
+                    message: `Compétence critique : ${competence}`,
+                    details: `Seulement 1 employé maîtrise cette compétence`,
+                    icon: 'fas fa-exclamation-triangle',
+                    priorite: 'moyenne'
+                });
+            }
+        });
+        
+        // Alertes basées sur les risques
+        analyseRisques.forEach(risque => {
+            alertes.push({
+                type: risque.type,
+                message: risque.description,
+                details: risque.impact,
+                icon: 'fas fa-shield-alt',
+                priorite: risque.niveau === 'Élevé' ? 'haute' : risque.niveau === 'Moyen' ? 'moyenne' : 'basse'
+            });
+        });
+        
+        // Alertes basées sur les indicateurs RH
+        if (indicateursRH.satisfaction < 70) {
+            alertes.push({
+                type: 'warning',
+                message: 'Satisfaction employés faible',
+                details: `${indicateursRH.satisfaction.toFixed(1)}% - Risque de turnover`,
+                icon: 'fas fa-user-friends',
+                priorite: 'moyenne'
+            });
+        }
+        
+        if (indicateursRH.tauxTurnover > 20) {
+            alertes.push({
+                type: 'danger',
+                message: 'Taux de turnover élevé',
+                details: `${indicateursRH.tauxTurnover}% - Coût de recrutement important`,
+                icon: 'fas fa-user-times',
+                priorite: 'haute'
+            });
+        }
+        
+        // Alertes financières
+        if (margePourcentage < margeObjectif) {
+            alertes.push({
+                type: 'danger',
+                message: 'Marge insuffisante',
+                details: `${margePourcentage.toFixed(1)}% vs ${margeObjectif}% objectif`,
+                icon: 'fas fa-chart-line',
+                priorite: 'haute'
+            });
+        }
+        
+        if (ratioCoutCA > 60) {
+            alertes.push({
+                type: 'warning',
+                message: 'Ratio coût/CA élevé',
+                details: `${ratioCoutCA.toFixed(1)}% - Optimisation nécessaire`,
+                icon: 'fas fa-euro-sign',
+                priorite: 'moyenne'
+            });
+        }
+        
+        return alertes;
+    }
+
+    displayAdvancedRHResults(results) {
+        const simulationResults = document.getElementById('simulation-results');
+        if (!simulationResults) return;
+
+        const periodeLabels = {
+            1: '1 mois',
+            3: '3 mois (trimestre)',
+            6: '6 mois (semestre)',
+            12: '12 mois (année)'
+        };
+
+        // Vérifier si les données proviennent d'un planning réel
+        const isFromPlanning = results.planningData;
+        const planningInfo = isFromPlanning ? `
+            <div class="planning-info">
+                <h5><i class="fas fa-calendar-check"></i> Données basées sur le planning réel</h5>
+                <div class="planning-details">
+                    <span><strong>Service :</strong> ${results.planningData.service?.name || 'N/A'}</span>
+                    <span><strong>Employés :</strong> ${results.planningData.employes?.length || 0}</span>
+                    <span><strong>Heures totales :</strong> ${results.totalHeuresServices.toLocaleString()}h</span>
+                    <span><strong>Masse salariale :</strong> ${results.totalCoutEmployes.toLocaleString()}€</span>
+                    <span><strong>Saison :</strong> ${results.planningData.saison || 'N/A'}</span>
+                    <span><strong>Généré le :</strong> ${new Date(results.planningData.generatedAt || Date.now()).toLocaleDateString('fr-FR')}</span>
+                </div>
+            </div>
+        ` : `
+            <div class="planning-alert warning">
+                <i class="fas fa-exclamation-triangle"></i>
+                <span>Attention : Cette simulation utilise des données estimées. Pour des résultats plus précis, générez d'abord un planning.</span>
+            </div>
+        `;
+
+        simulationResults.innerHTML = `
+            <div class="advanced-rh-analysis">
+                <div class="analysis-header">
+                    <h4><i class="fas fa-users-cog"></i> Analyse RH Avancée - ${periodeLabels[results.periode]}</h4>
+                    ${planningInfo}
+                    <div class="analysis-summary">
+                        <div class="summary-item ${results.margeBrutePourcentage >= results.margeObjectif ? 'positive' : 'negative'}">
+                            <span class="summary-label">Marge brute</span>
+                            <span class="summary-value">${results.margeBrutePourcentage.toFixed(1)}%</span>
+                        </div>
+                        <div class="summary-item">
+                            <span class="summary-label">Effectif</span>
+                            <span class="summary-value">${results.indicateursRH.totalEmployes}</span>
+                        </div>
+                        <div class="summary-item">
+                            <span class="summary-label">Satisfaction</span>
+                            <span class="summary-value">${results.indicateursRH.satisfaction.toFixed(1)}%</span>
+                        </div>
+                        <div class="summary-item">
+                            <span class="summary-label">Coût/h</span>
+                            <span class="summary-value">${results.coutHoraireMoyen.toFixed(2)}€</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="rh-analysis-grid">
+                    <!-- Analyse des compétences -->
+                    <div class="rh-card competences">
+                        <div class="card-header">
+                            <i class="fas fa-brain"></i>
+                            <h5>Analyse des compétences</h5>
+                        </div>
+                        <div class="card-content">
+                            ${this.generateCompetencesHTML(results.analyseCompetences)}
+                        </div>
+                    </div>
+
+                    <!-- Gestion des congés -->
+                    <div class="rh-card conges">
+                        <div class="card-header">
+                            <i class="fas fa-calendar-alt"></i>
+                            <h5>Gestion des congés</h5>
+                        </div>
+                        <div class="card-content">
+                            <div class="conges-stats">
+                                <div class="stat-item">
+                                    <span class="stat-label">Taux disponibilité</span>
+                                    <span class="stat-value">${results.gestionConges.tauxDisponibilite.toFixed(1)}%</span>
+                                </div>
+                                <div class="stat-item">
+                                    <span class="stat-label">Jours congés total</span>
+                                    <span class="stat-value">${results.gestionConges.totalJoursConges}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Rotation des équipes -->
+                    <div class="rh-card rotation">
+                        <div class="card-header">
+                            <i class="fas fa-sync-alt"></i>
+                            <h5>Rotation des équipes</h5>
+                        </div>
+                        <div class="card-content">
+                            ${this.generateRotationHTML(results.rotationEquipes)}
+                        </div>
+                    </div>
+
+                    <!-- Indicateurs RH -->
+                    <div class="rh-card indicateurs">
+                        <div class="card-header">
+                            <i class="fas fa-chart-bar"></i>
+                            <h5>Indicateurs RH</h5>
+                        </div>
+                        <div class="card-content">
+                            ${this.generateIndicateursHTML(results.indicateursRH)}
+                        </div>
+                    </div>
+
+                    <!-- Scénarios -->
+                    <div class="rh-card scenarios">
+                        <div class="card-header">
+                            <i class="fas fa-route"></i>
+                            <h5>Scénarios d'optimisation</h5>
+                        </div>
+                        <div class="card-content">
+                            ${this.generateScenariosHTML(results.scenarios)}
+                        </div>
+                    </div>
+
+                    <!-- Analyse des risques -->
+                    <div class="rh-card risques">
+                        <div class="card-header">
+                            <i class="fas fa-shield-alt"></i>
+                            <h5>Analyse des risques</h5>
+                        </div>
+                        <div class="card-content">
+                            ${this.generateRisquesHTML(results.analyseRisques)}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Alertes -->
+                <div class="rh-alerts">
+                    <h6><i class="fas fa-exclamation-triangle"></i> Alertes et recommandations</h6>
+                    <div class="alerts-list">
+                        ${results.alertes.map(alerte => `
+                            <div class="alert-item ${alerte.type}">
+                                <i class="${alerte.icon}"></i>
+                                <div class="alert-content">
+                                    <span class="alert-title">${alerte.message}</span>
+                                    <span class="alert-details">${alerte.details}</span>
+                                </div>
+                                <span class="alert-priority ${alerte.priorite}">${alerte.priorite}</span>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+
+                <!-- Actions recommandées -->
+                <div class="rh-actions">
+                    <button class="btn btn-primary" onclick="gestPrev.saveCurrentScenario()">
+                        <i class="fas fa-save"></i> Sauvegarder ce scénario
+                    </button>
+                    <button class="btn btn-secondary" onclick="gestPrev.exportRHReport()">
+                        <i class="fas fa-download"></i> Exporter le rapport
+                    </button>
+                    <button class="btn btn-outline-primary" onclick="gestPrev.generateOptimizationPlan()">
+                        <i class="fas fa-magic"></i> Plan d'optimisation
+                    </button>
+                </div>
+            </div>
+        `;
+    }
+
+    generateCompetencesHTML(competences) {
+        if (Object.keys(competences).length === 0) {
+            return '<p class="no-data">Aucune compétence définie</p>';
+        }
+
+        return `
+            <div class="competences-list">
+                ${Object.entries(competences).map(([competence, data]) => `
+                    <div class="competence-item">
+                        <div class="competence-header">
+                            <span class="competence-name">${competence}</span>
+                            <span class="competence-count">${data.count} employé(s)</span>
+                        </div>
+                        <div class="competence-details">
+                            <span class="niveau-moyen">Niveau moyen: ${data.niveauMoyen.toFixed(1)}</span>
+                        </div>
+                    </div>
+                `).join('')}
+            </div>
+        `;
+    }
+
+    generateRotationHTML(rotation) {
+        return `
+            <div class="rotation-stats">
+                <div class="season-rotation">
+                    <h6>Haute saison</h6>
+                    <div class="rotation-metrics">
+                        <span>Nécessaire: ${rotation.hauteSaison.effectifNecessaire}</span>
+                        <span>Disponible: ${rotation.hauteSaison.effectifDisponible}</span>
+                        <span class="taux-rotation">Taux: ${rotation.hauteSaison.tauxRotation.toFixed(1)}%</span>
+                    </div>
+                </div>
+                <div class="season-rotation">
+                    <h6>Basse saison</h6>
+                    <div class="rotation-metrics">
+                        <span>Nécessaire: ${rotation.basseSaison.effectifNecessaire}</span>
+                        <span>Disponible: ${rotation.basseSaison.effectifDisponible}</span>
+                        <span class="taux-rotation">Taux: ${rotation.basseSaison.tauxRotation.toFixed(1)}%</span>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    generateIndicateursHTML(indicateurs) {
+        return `
+            <div class="indicateurs-stats">
+                <div class="stat-item">
+                    <span class="stat-label">Heures/employé</span>
+                    <span class="stat-value">${indicateurs.heuresParEmploye.toFixed(1)}h</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Coût/employé</span>
+                    <span class="stat-value">${indicateurs.coutParEmploye.toLocaleString()}€</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Turnover</span>
+                    <span class="stat-value">${indicateurs.tauxTurnover}%</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Satisfaction</span>
+                    <span class="stat-value">${indicateurs.satisfaction.toFixed(1)}%</span>
+                </div>
+            </div>
+        `;
+    }
+
+    generateScenariosHTML(scenarios) {
+        return `
+            <div class="scenarios-list">
+                ${scenarios.map(scenario => `
+                    <div class="scenario-item">
+                        <div class="scenario-header">
+                            <h6>${scenario.nom}</h6>
+                            <span class="scenario-impact">+${scenario.resultats.coutReduction.toFixed(1)}% économies</span>
+                        </div>
+                        <p class="scenario-description">${scenario.description}</p>
+                        <div class="scenario-metrics">
+                            <span class="metric">Marge: ${scenario.resultats.margePourcentage.toFixed(1)}%</span>
+                            <span class="metric">Écart: ${scenario.resultats.ecartObjectif.toFixed(1)}%</span>
+                            <span class="metric">Économies: ${scenario.resultats.economies.toLocaleString()}€</span>
+                        </div>
+                    </div>
+                `).join('')}
+            </div>
+        `;
+    }
+
+    generateRisquesHTML(risques) {
+        if (risques.length === 0) {
+            return '<p class="no-data">Aucun risque identifié</p>';
+        }
+
+        return `
+            <div class="risques-list">
+                ${risques.map(risque => `
+                    <div class="risque-item ${risque.type}">
+                        <div class="risque-header">
+                            <span class="risque-niveau">${risque.niveau}</span>
+                            <span class="risque-description">${risque.description}</span>
+                        </div>
+                        <div class="risque-details">
+                            <span class="risque-impact">Impact: ${risque.impact}</span>
+                            <span class="risque-recommandation">Recommandation: ${risque.recommandation}</span>
+                        </div>
+                    </div>
+                `).join('')}
+            </div>
+        `;
+    }
+
+    exportRHReport() {
+        // Fonction pour exporter le rapport RH
+        this.showNotification('Fonction d\'export en cours de développement', 'info');
+    }
+
+    generateOptimizationPlan() {
+        // Fonction pour générer un plan d'optimisation
+        this.showNotification('Plan d\'optimisation en cours de génération', 'info');
+    }
+
+    // Fonction pour afficher les détails du planning dans la simulation RH
+    displayPlanningDetailsInRH(planningData) {
+        if (!planningData) return '';
+        
+        const { service, employes, saison, totalHeures, masseSalariale, planningAnnuel } = planningData;
+        
+        return `
+            <div class="planning-data-card">
+                <div class="planning-data-header">
+                    <i class="fas fa-chart-line"></i>
+                    <h6>Détails du planning utilisé</h6>
+                </div>
+                <div class="planning-data-grid">
+                    <div class="planning-data-item">
+                        <span class="planning-data-label">Service</span>
+                        <span class="planning-data-value">${service?.name || 'N/A'}</span>
+                    </div>
+                    <div class="planning-data-item">
+                        <span class="planning-data-label">Employés</span>
+                        <span class="planning-data-value">${employes?.length || 0}</span>
+                    </div>
+                    <div class="planning-data-item">
+                        <span class="planning-data-label">Saison</span>
+                        <span class="planning-data-value">${saison || 'N/A'}</span>
+                    </div>
+                    <div class="planning-data-item">
+                        <span class="planning-data-label">Heures totales</span>
+                        <span class="planning-data-value">${totalHeures?.toLocaleString() || 0}h</span>
+                    </div>
+                    <div class="planning-data-item">
+                        <span class="planning-data-label">Masse salariale</span>
+                        <span class="planning-data-value">${masseSalariale?.toLocaleString() || 0}€</span>
+                    </div>
+                    <div class="planning-data-item">
+                        <span class="planning-data-label">Coût/h moyen</span>
+                        <span class="planning-data-value">${totalHeures > 0 ? (masseSalariale / totalHeures).toFixed(2) : 0}€</span>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
 }
 
 // Initialisation
 const gestPrev = new GestPrev();
 document.addEventListener('DOMContentLoaded', () => {
     gestPrev.init();
-}); 
+});

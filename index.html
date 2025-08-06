@@ -124,7 +124,7 @@
                         <div class="feature-card">
                             <i class="fas fa-calendar-alt"></i>
                             <h4>Planning prévisionnel</h4>
-                            <p>Générez des plannings optimisés selon vos besoins</p>
+                            <p>Générez vos plannings étape par étape</p>
                         </div>
                         <div class="feature-card">
                             <i class="fas fa-chart-line"></i>
@@ -513,25 +513,154 @@
                             <div id="config-35h" class="hours-config" style="display: none;">
                                 <h5><i class="fas fa-clock"></i> Configuration 35h/semaine</h5>
                                 <div class="form-row">
-                                    <div class="form-group">
+                                <div class="form-group">
                                         <label for="employe-heures-annuel-35">Heures contractuelles annuelles</label>
                                         <input type="number" id="employe-heures-annuel-35" name="employe-heures-annuel-35" value="1820" min="0" readonly>
                                         <small>35h × 52 semaines = 1,820h/an</small>
-                                    </div>
-
                                 </div>
+
+                            </div>
                             </div>
                             
                             <!-- Configuration 39h -->
                             <div id="config-39h" class="hours-config">
                                 <h5><i class="fas fa-clock"></i> Configuration 39h/semaine (modulation)</h5>
-                                <div class="form-row">
-                                    <div class="form-group">
+                            <div class="form-row">
+                                <div class="form-group">
                                         <label for="employe-heures-annuel-39">Heures contractuelles annuelles</label>
                                         <input type="number" id="employe-heures-annuel-39" name="employe-heures-annuel-39" value="2028" min="0" readonly>
                                         <small>39h × 52 semaines = 2,028h/an</small>
-                                    </div>
+                                </div>
 
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="form-section">
+                            <h4><i class="fas fa-clock"></i> Horaires de travail</h4>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Mode de gestion</label>
+                                    <div class="mode-selector">
+                                        <label class="mode-option">
+                                            <input type="radio" name="employe-mode" value="manuel" checked>
+                                            <span>Manuel</span>
+                                            <small>Gestion manuelle des plannings</small>
+                                        </label>
+                                        <label class="mode-option">
+                                            <input type="radio" name="employe-mode" value="semi-auto">
+                                            <span>Semi-automatique</span>
+                                            <small>Suggestions avec validation</small>
+                                        </label>
+                                        <label class="mode-option">
+                                            <input type="radio" name="employe-mode" value="auto">
+                                            <span>Automatique</span>
+                                            <small>Optimisation automatique</small>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="employe-horaires">
+                                <h5><i class="fas fa-calendar"></i> Horaires par jour</h5>
+                                <div class="horaires-grid">
+                                    <!-- Lundi -->
+                                    <div class="jour-horaire-employe">
+                                        <h6>Lundi</h6>
+                                        <div class="horaire-inputs">
+                                            <input type="time" name="lundi-debut" value="08:00">
+                                            <span>à</span>
+                                            <input type="time" name="lundi-fin" value="17:00">
+                                            <label>
+                                                <input type="checkbox" name="lundi-actif" checked>
+                                                Actif
+                                            </label>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Mardi -->
+                                    <div class="jour-horaire-employe">
+                                        <h6>Mardi</h6>
+                                        <div class="horaire-inputs">
+                                            <input type="time" name="mardi-debut" value="08:00">
+                                            <span>à</span>
+                                            <input type="time" name="mardi-fin" value="17:00">
+                                            <label>
+                                                <input type="checkbox" name="mardi-actif" checked>
+                                                Actif
+                                            </label>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Mercredi -->
+                                    <div class="jour-horaire-employe">
+                                        <h6>Mercredi</h6>
+                                        <div class="horaire-inputs">
+                                            <input type="time" name="mercredi-debut" value="08:00">
+                                            <span>à</span>
+                                            <input type="time" name="mercredi-fin" value="17:00">
+                                            <label>
+                                                <input type="checkbox" name="mercredi-actif" checked>
+                                                Actif
+                                            </label>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Jeudi -->
+                                    <div class="jour-horaire-employe">
+                                        <h6>Jeudi</h6>
+                                        <div class="horaire-inputs">
+                                            <input type="time" name="jeudi-debut" value="08:00">
+                                            <span>à</span>
+                                            <input type="time" name="jeudi-fin" value="17:00">
+                                            <label>
+                                                <input type="checkbox" name="jeudi-actif" checked>
+                                                Actif
+                                            </label>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Vendredi -->
+                                    <div class="jour-horaire-employe">
+                                        <h6>Vendredi</h6>
+                                        <div class="horaire-inputs">
+                                            <input type="time" name="vendredi-debut" value="08:00">
+                                            <span>à</span>
+                                            <input type="time" name="vendredi-fin" value="17:00">
+                                            <label>
+                                                <input type="checkbox" name="vendredi-actif" checked>
+                                                Actif
+                                            </label>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Samedi -->
+                                    <div class="jour-horaire-employe">
+                                        <h6>Samedi</h6>
+                                        <div class="horaire-inputs">
+                                            <input type="time" name="samedi-debut" value="08:00">
+                                            <span>à</span>
+                                            <input type="time" name="samedi-fin" value="12:00">
+                                            <label>
+                                                <input type="checkbox" name="samedi-actif">
+                                                Actif
+                                            </label>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Dimanche -->
+                                    <div class="jour-horaire-employe">
+                                        <h6>Dimanche</h6>
+                                        <div class="horaire-inputs">
+                                            <input type="time" name="dimanche-debut" value="08:00">
+                                            <span>à</span>
+                                            <input type="time" name="dimanche-fin" value="12:00">
+                                            <label>
+                                                <input type="checkbox" name="dimanche-actif">
+                                                Actif
+                                            </label>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -569,10 +698,11 @@
                 <section id="rh-planning" class="module-section">
                     <div class="section-header">
                     <h3><i class="fas fa-calendar-week"></i> Planning RH</h3>
-                    <p>Gérez les plannings hebdomadaires de vos équipes</p>
+                        <p>Générez vos plannings avec sélection intelligente</p>
                     </div>
                     
                     <div class="planning-container">
+                        <!-- Paramètres principaux -->
                         <div class="planning-controls">
                             <div class="form-section">
                             <h4><i class="fas fa-cog"></i> Paramètres du planning</h4>
@@ -584,47 +714,223 @@
                                         </select>
                                     </div>
                                     <div class="form-group">
-                                        <label for="planning-week">Semaine</label>
-                                        <div class="week-selector">
-                                        <button type="button" class="btn-week" id="prev-week">
-                                                <i class="fas fa-chevron-left"></i>
+                                        <label>Saison</label>
+                                        <div class="saison-buttons">
+                                            <button type="button" class="btn-saison active" data-saison="haute">
+                                                <i class="fas fa-sun"></i> Haute Saison
                                             </button>
-                                        <input type="week" id="planning-week" name="planning-week" required>
-                                        <button type="button" class="btn-week" id="next-week">
-                                                <i class="fas fa-chevron-right"></i>
+                                            <button type="button" class="btn-saison" data-saison="basse">
+                                                <i class="fas fa-cloud"></i> Basse Saison
                                             </button>
                                     </div>
                                 </div>
-                                    <div class="form-group">
-                                    <label for="planning-test-quota">Quota de test (%)</label>
-                                    <input type="number" id="planning-test-quota" name="planning-test-quota" min="0" max="100" value="80" required>
-                                    <small>Pourcentage d'occupation pour les tests</small>
                                 </div>
                             </div>
                         </div>
 
+                        <!-- Sélection Intelligente des Employés -->
                         <div class="form-section">
-                            <h4><i class="fas fa-users"></i> Sélection des employés</h4>
-                            <div class="employes-selector" id="planning-employes-selector">
-                                <!-- Les employés seront ajoutés dynamiquement -->
+                            <h4><i class="fas fa-users"></i> Sélection Intelligente des Employés</h4>
+                            
+                            <!-- Filtres Rapides -->
+                            <div class="employes-filters">
+                                <h5><i class="fas fa-filter"></i> Filtres Rapides</h5>
+                                <div class="filter-buttons">
+                                    <button type="button" class="filter-btn active" data-filter="all">
+                                        <i class="fas fa-users"></i> Tous
+                                    </button>
+                                    <button type="button" class="filter-btn" data-filter="service">
+                                        <i class="fas fa-tag"></i> Par service
+                                    </button>
+                                    <button type="button" class="filter-btn" data-filter="contract">
+                                        <i class="fas fa-clock"></i> Par contrat
+                                    </button>
+                                    <button type="button" class="filter-btn" data-filter="level">
+                                        <i class="fas fa-star"></i> Par niveau
+                                    </button>
                                 </div>
                             </div>
                             
-                            <div class="form-actions">
-                                <button type="button" id="generate-planning" class="btn btn-primary">
-                                    <i class="fas fa-magic"></i> Générer le planning
+                            <!-- Analyse en Temps Réel -->
+                            <div class="employes-analysis">
+                                <h6><i class="fas fa-chart-bar"></i> Analyse en temps réel</h6>
+                                <div class="analysis-grid">
+                                    <div class="analysis-item">
+                                        <div class="analysis-label">Employés sélectionnés</div>
+                                        <div class="analysis-value" id="selected-count">0</div>
+                                    </div>
+                                    <div class="analysis-item">
+                                        <div class="analysis-label">Effectif recommandé</div>
+                                        <div class="analysis-value" id="recommended-count">0</div>
+                                    </div>
+                                    <div class="analysis-item">
+                                        <div class="analysis-label">Heures à couvrir</div>
+                                        <div class="analysis-value" id="hours-to-cover">0h</div>
+                                    </div>
+                                    <div class="analysis-item">
+                                        <div class="analysis-label">Couverture</div>
+                                        <div class="analysis-value">
+                                            <span id="coverage-percentage" class="coverage-percentage">0%</span>
+                                        </div>
+                                    </div>
+                                    <div class="analysis-item">
+                                        <div class="analysis-label">Coût estimé</div>
+                                        <div class="analysis-value" id="estimated-cost">0€</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Alertes en Temps Réel -->
+                            <div class="employes-alerts" id="employes-alerts">
+                                <!-- Les alertes seront ajoutées dynamiquement -->
+                            </div>
+
+                            <!-- Sélecteur d'Employés -->
+                            <div class="employes-selector-container">
+                                <div class="employes-available" id="employes-available">
+                                    <h6><i class="fas fa-list"></i> Employés Disponibles</h6>
+                                    <div class="employes-checkbox-list">
+                                        <!-- Les employés seront ajoutés dynamiquement avec des checkboxes -->
+                                    </div>
+                                </div>
+                                
+                                <div class="employes-selected" id="employes-selected">
+                                    <div class="selected-header">
+                                        <h6><i class="fas fa-check-circle"></i> Employés Sélectionnés</h6>
+                                        <button type="button" class="btn btn-sm btn-outline-danger" onclick="gestPrev.clearAllEmployeSelections()">
+                                            <i class="fas fa-times"></i> Tout effacer
+                                        </button>
+                                    </div>
+                                    <div class="selected-employes-list">
+                                        <!-- Les employés sélectionnés seront affichés ici -->
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Suggestions d'Auto-Complétion -->
+                            <div class="auto-completion-suggestions" id="auto-completion-suggestions" style="display: none;">
+                                <h6><i class="fas fa-lightbulb"></i> Suggestions d'Auto-Complétion</h6>
+                                <div class="suggestions-list" id="suggestions-list">
+                                    <!-- Les suggestions seront ajoutées dynamiquement -->
+                                </div>
+                                <div class="suggestions-actions">
+                                    <button type="button" class="btn btn-sm btn-primary" id="apply-suggestions">
+                                        <i class="fas fa-check"></i> Appliquer les suggestions
                                 </button>
-                                <button type="button" id="optimize-planning" class="btn btn-secondary">
-                                <i class="fas fa-chart-line"></i> Optimiser
+                                    <button type="button" class="btn btn-sm btn-secondary" id="ignore-suggestions">
+                                        <i class="fas fa-times"></i> Ignorer
                                 </button>
+                                </div>
                         </div>
                     </div>
 
+                        <!-- Prévisualisation -->
+                        <div class="planning-preview" id="planning-preview" style="display: none;">
+                            <h4><i class="fas fa-eye"></i> Prévisualisation</h4>
+                            <div class="preview-stats">
+                                <div class="preview-stat">
+                                    <i class="fas fa-users"></i>
+                                    <span>Effectif : <strong id="preview-effectif">0</strong></span>
+                                </div>
+                                <div class="preview-stat">
+                                    <i class="fas fa-clock"></i>
+                                    <span>Heures/semaine : <strong id="preview-heures">0h</strong></span>
+                                </div>
+                                <div class="preview-stat">
+                                    <i class="fas fa-euro-sign"></i>
+                                    <span>Coût/semaine : <strong id="preview-cout">0€</strong></span>
+                                </div>
+                                <div class="preview-stat">
+                                    <i class="fas fa-percentage"></i>
+                                    <span>Couverture : <strong id="preview-couverture">0%</strong></span>
+                                </div>
+                            </div>
+                            
+                            <!-- Heures disponibles par employé -->
+                            <div id="available-hours-container" class="available-hours-container" style="display: none;">
+                                <!-- Les heures disponibles seront affichées ici -->
+                            </div>
+                            
+                            <!-- Alertes d'optimisation -->
+                            <div id="optimisation-alerts" class="optimisation-alerts" style="display: none;">
+                                <!-- Les alertes d'optimisation seront affichées ici -->
+                            </div>
+                            
+                            <!-- Bouton de sauvegarde -->
+                            <button id="save-simulation-btn" class="btn btn-primary" style="display: none;">
+                                <i class="fas fa-save"></i> Sauvegarder la simulation
+                            </button>
+                        </div>
+                        
+                        <!-- Historique des simulations -->
+                        <div id="simulations-history" class="simulations-history" style="display: none;">
+                            <!-- L'historique des simulations sera affiché ici -->
+                        </div>
+                        
+                        <!-- Mode de génération -->
+                        <div class="planning-mode-section">
+                            <h6><i class="fas fa-cogs"></i> Mode de génération</h6>
+                            <div class="planning-mode-options">
+                                <label class="planning-mode-option">
+                                    <input type="radio" name="planning-mode" value="manuel" checked>
+                                    <span>Manuel</span>
+                                    <small>Génération manuelle avec validation</small>
+                                </label>
+                                <label class="planning-mode-option">
+                                    <input type="radio" name="planning-mode" value="semi-auto">
+                                    <span>Semi-automatique</span>
+                                    <small>Suggestions avec validation</small>
+                                </label>
+                                <label class="planning-mode-option">
+                                    <input type="radio" name="planning-mode" value="auto">
+                                    <span>Automatique</span>
+                                    <small>Optimisation complète</small>
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <!-- Actions -->
+                        <div class="planning-actions">
+                            <button class="btn btn-primary" onclick="gestPrev.generateSimplifiedPlanning()">
+                                <i class="fas fa-calendar-plus"></i> Générer Planning
+                            </button>
+                            <button class="btn btn-secondary" onclick="gestPrev.optimizeSimplifiedPlanning()">
+                                <i class="fas fa-magic"></i> Optimiser
+                            </button>
+                            <button class="btn btn-outline-primary" onclick="gestPrev.showSimplifiedPreview()">
+                                <i class="fas fa-eye"></i> Aperçu
+                            </button>
+                            <button class="btn btn-outline-secondary" onclick="gestPrev.displaySimulationsHistory()">
+                                <i class="fas fa-history"></i> Historique
+                            </button>
+                            <button class="btn btn-outline-success" onclick="gestPrev.saveCurrentScenario()">
+                                <i class="fas fa-save"></i> Sauvegarder
+                            </button>
+                        </div>
+                            
+                            <!-- Container pour les optimisations -->
+                            <div id="optimisations-container" class="optimisations-container" style="display: none;">
+                                <!-- Les optimisations seront affichées ici -->
+                            </div>
+                    </div>
+
+                    <!-- Résultats du Planning -->
                     <div class="planning-results" id="planning-results">
                         <div class="planning-results-empty">
                             <i class="fas fa-calendar-alt"></i>
                             <p>Aucun planning généré</p>
                             <small>Sélectionnez un service et des employés, puis cliquez sur "Générer le planning"</small>
+                        </div>
+                    </div>
+
+                    <!-- Section des scénarios sauvegardés -->
+                    <div class="scenarios-section" style="margin-top: 2rem;">
+                        <div class="section-header">
+                            <h4><i class="fas fa-save"></i> Scénarios sauvegardés</h4>
+                            <p>Gérez vos scénarios de planning sauvegardés</p>
+                        </div>
+                        <div id="scenarios-list">
+                            <!-- Les scénarios seront affichés ici -->
                         </div>
                     </div>
                 </div>
@@ -800,8 +1106,8 @@
                             <button type="button" id="validate-rules-35" class="btn btn-primary">
                                 <i class="fas fa-check"></i> Valider
                             </button>
+                            </div>
                         </div>
-                    </div>
                         
                     <!-- Configuration saisonnière (Guyane Zone A) -->
                     <div class="seasons-container">
@@ -930,9 +1236,14 @@
                                     <small>Choisissez quels employés inclure</small>
                                 </div>
                             </div>
-                            <button type="button" id="run-annual-simulation" class="btn btn-primary">
-                                <i class="fas fa-calculator"></i> Analyser la masse salariale
-                            </button>
+                            <div class="form-actions">
+                                <button type="button" id="run-annual-simulation" class="btn btn-primary">
+                                    <i class="fas fa-calculator"></i> Analyser la masse salariale
+                                </button>
+                                <button type="button" id="run-advanced-rh-simulation" class="btn btn-secondary">
+                                    <i class="fas fa-users-cog"></i> Simulation RH avancée
+                                </button>
+                            </div>
                         </div>
                         
                         <!-- Résultats de la simulation RH -->
@@ -956,141 +1267,5 @@
     <!-- Scripts -->
     <script src="js/modules.js"></script>
     <script src="js/app.js"></script>
-    <script src="EVENT-MANAGER.js"></script>
-    <script src="DATA-MANAGER.js"></script>
-    <script src="UI-MANAGER.js"></script>
-    <script src="FERME-BUTTON-MANAGER.js"></script>
-    <script src="HEURES-CALCUL-MANAGER.js"></script>
-    <script src="SERVICES-ASSIGNES-MANAGER.js"></script>
-    
-    <!-- SOLUTION RADICALE - NAVIGATION DIRECTE -->
-    <script>
-        console.log('🚀 SOLUTION RADICALE - Navigation directe');
-        
-        // Fonction immédiate pour modifier les titres
-        function updateTitlesNow() {
-            const titles = {
-                'Configuration des services': 'Services',
-                'Gestion des employés': 'Employés',
-                'Planning prévisionnel': 'Planning RH',
-                'Simulation RH': 'Simulation RH',
-                'Tableau de bord': 'Dashboard',
-                'Calculs automatiques': 'Configuration'
-            };
-            
-            document.querySelectorAll('.feature-card h4').forEach(title => {
-                const current = title.textContent.trim();
-                if (titles[current]) {
-                    title.textContent = titles[current];
-                    console.log('✅ Titre modifié:', current, '→', titles[current]);
-                }
-            });
-        }
-        
-        // Fonction immédiate pour naviguer
-        function navigateNow(sectionName) {
-            document.querySelectorAll('.module-section').forEach(s => s.style.display = 'none');
-            const target = document.getElementById(sectionName);
-            if (target) {
-                target.style.display = 'block';
-                target.scrollIntoView({ behavior: 'smooth' });
-                console.log('✅ Navigation vers:', sectionName);
-            }
-        }
-        
-        // Fonction immédiate pour gérer les clics
-        function handleClickNow(event) {
-            let card = event.target;
-            while (card && !card.classList.contains('feature-card')) {
-                card = card.parentElement;
-            }
-            
-            if (card && card.classList.contains('feature-card')) {
-                const title = card.querySelector('h4');
-                if (title) {
-                    const cardTitle = title.textContent.trim();
-                    console.log('🎯 Clic sur:', cardTitle);
-                    
-                    const navigation = {
-                        'Services': 'rh-services',
-                        'Configuration des services': 'rh-services',
-                        'Employés': 'rh-employes',
-                        'Gestion des employés': 'rh-employes',
-                        'Planning RH': 'rh-planning',
-                        'Planning prévisionnel': 'rh-planning',
-                        'Simulation RH': 'rh-simulation',
-                        'Dashboard': 'rh-dashboard',
-                        'Tableau de bord': 'rh-dashboard',
-                        'Configuration': 'rh-configuration',
-                        'Calculs automatiques': 'rh-configuration'
-                    };
-                    
-                    const targetSection = navigation[cardTitle];
-                    if (targetSection) {
-                        navigateNow(targetSection);
-                    }
-                }
-            }
-        }
-        
-        // EXÉCUTION IMMÉDIATE
-        document.addEventListener('DOMContentLoaded', function() {
-            console.log('🚀 EXÉCUTION IMMÉDIATE');
-            updateTitlesNow();
-            document.addEventListener('click', handleClickNow);
-            document.addEventListener('click', handleFermeButtonClick);
-            console.log('✅ SOLUTION RADICALE APPLIQUÉE');
-        });
-        
-        // Fonction pour les boutons Fermé
-        function handleFermeButtonClick(event) {
-            const button = event.target.closest('.ferme-btn');
-            if (!button) return;
-            
-            const day = button.dataset.day;
-            const season = button.dataset.season;
-            console.log('🖱️ Clic bouton Fermé:', day, season);
-            
-            if (button.classList.contains('active')) {
-                // Désactiver
-                button.classList.remove('active');
-                button.querySelector('span').textContent = 'Fermé';
-                button.querySelector('i').className = 'fas fa-lock';
-                
-                // Réactiver les inputs
-                const seasonDiv = button.closest('.season-hours-day');
-                const inputs = seasonDiv.querySelectorAll('input[type="time"]');
-                inputs.forEach(input => {
-                    input.disabled = false;
-                    input.style.opacity = '1';
-                });
-                console.log('🔓 Bouton désactivé:', day, season);
-            } else {
-                // Activer
-                button.classList.add('active');
-                button.querySelector('span').textContent = 'Ouvert';
-                button.querySelector('i').className = 'fas fa-unlock';
-                
-                // Désactiver les inputs
-                const seasonDiv = button.closest('.season-hours-day');
-                const inputs = seasonDiv.querySelectorAll('input[type="time"]');
-                inputs.forEach(input => {
-                    input.disabled = true;
-                    input.style.opacity = '0.5';
-                });
-                console.log('🔒 Bouton activé:', day, season);
-            }
-        }
-        
-        // Fallback immédiat si DOMContentLoaded déjà passé
-        if (document.readyState === 'loading') {
-            console.log('⏳ DOM en cours de chargement...');
-        } else {
-            console.log('⚡ DOM déjà prêt, exécution immédiate');
-            updateTitlesNow();
-            document.addEventListener('click', handleClickNow);
-            document.addEventListener('click', handleFermeButtonClick);
-        }
-    </script>
 </body>
 </html>
