@@ -73,65 +73,249 @@ ensureDefaultConfiguration() {
     // ===== PERSISTANCE DES DONNÉES =====
     loadFromLocalStorage() {
         try {
+            // Sauvegarde de sécurité avant chargement
+            this.createBackup();
+            
             const savedServices = localStorage.getItem('gestPrevServices');
             const savedEmployes = localStorage.getItem('gestPrevEmployes');
             const savedPlanning = localStorage.getItem('gestPrevPlanning');
+            const savedScenarios = localStorage.getItem('gestPrevScenarios');
+            const savedSimulations = localStorage.getItem('gestPrevSimulations');
+            const savedCurrentPlanning = localStorage.getItem('currentPlanning');
             
+            // Charger les services avec migration
             if (savedServices) {
                 this.services = JSON.parse(savedServices);
-                // Migration des anciens services vers le nouveau format
                 this.migrateOldServices();
             }
             
+            // Charger les employés avec migration
             if (savedEmployes) {
                 this.employes = JSON.parse(savedEmployes);
+                this.migrateOldEmployes();
             }
             
+            // Charger le planning
             if (savedPlanning) {
                 this.planning = JSON.parse(savedPlanning);
             }
+            
+            // Charger les scénarios
+            if (savedScenarios) {
+                this.scenarios = JSON.parse(savedScenarios);
+            }
+            
+            // Charger les simulations
+            if (savedSimulations) {
+                this.simulations = JSON.parse(savedSimulations);
+            }
+            
+            // Charger le planning actuel
+            if (savedCurrentPlanning) {
+                this.currentPlanning = JSON.parse(savedCurrentPlanning);
+            }
+            
+            console.log('✅ Données chargées avec succès:', {
+                services: this.services.length,
+                employes: this.employes.length,
+                planning: this.planning.length,
+                scenarios: this.scenarios ? this.scenarios.length : 0,
+                simulations: this.simulations ? this.simulations.length : 0
+            });
+            
         } catch (error) {
-            console.error('Erreur lors du chargement des données:', error);
+            console.error('❌ Erreur lors du chargement des données:', error);
+            this.showNotification('Erreur lors du chargement des données. Restauration de la sauvegarde...', 'error');
+            this.restoreFromBackup();
         }
     }
 
     saveToLocalStorage() {
-        localStorage.setItem('gestPrevServices', JSON.stringify(this.services));
-        localStorage.setItem('gestPrevEmployes', JSON.stringify(this.employes));
-        localStorage.setItem('gestPrevPlanning', JSON.stringify(this.planning));
+        try {
+            // Créer une sauvegarde avant de sauvegarder
+            this.createBackup();
+            
+            localStorage.setItem('gestPrevServices', JSON.stringify(this.services));
+            localStorage.setItem('gestPrevEmployes', JSON.stringify(this.employes));
+            localStorage.setItem('gestPrevPlanning', JSON.stringify(this.planning));
+            localStorage.setItem('gestPrevScenarios', JSON.stringify(this.scenarios || []));
+            localStorage.setItem('gestPrevSimulations', JSON.stringify(this.simulations || []));
+            localStorage.setItem('gestPrevVersion', '2.0.0'); // Version actuelle
+            localStorage.setItem('gestPrevLastSave', new Date().toISOString());
+            
+            console.log('✅ Données sauvegardées avec succès');
+        } catch (error) {
+            console.error('❌ Erreur lors de la sauvegarde:', error);
+            this.showNotification('Erreur lors de la sauvegarde des données', 'error');
+        }
+    }
+
+    // ===== SYSTÈME DE SAUVEGARDE ET RESTAURATION =====
+    
+    createBackup() {
+        try {
+            const backup = {
+                timestamp: new Date().toISOString(),
+                version: '2.0.0',
+                services: this.services,
+                employes: this.employes,
+                planning: this.planning,
+                scenarios: this.scenarios || [],
+                simulations: this.simulations || [],
+                currentPlanning: localStorage.getItem('currentPlanning')
+            };
+            
+            // Sauvegarder dans localStorage avec un timestamp
+            const backupKey = `gestPrevBackup_${Date.now()}`;
+            localStorage.setItem(backupKey, JSON.stringify(backup));
+            
+            // Garder seulement les 5 dernières sauvegardes
+            this.cleanOldBackups();
+            
+            console.log('💾 Sauvegarde créée:', backupKey);
+        } catch (error) {
+            console.error('❌ Erreur lors de la création de la sauvegarde:', error);
+        }
+    }
+
+    cleanOldBackups() {
+        try {
+            const backupKeys = Object.keys(localStorage).filter(key => key.startsWith('gestPrevBackup_'));
+            if (backupKeys.length > 5) {
+                // Trier par timestamp et supprimer les plus anciens
+                backupKeys.sort().slice(0, -5).forEach(key => {
+                    localStorage.removeItem(key);
+                    console.log('🗑️ Sauvegarde supprimée:', key);
+                });
+            }
+        } catch (error) {
+            console.error('❌ Erreur lors du nettoyage des sauvegardes:', error);
+        }
+    }
+
+    restoreFromBackup() {
+        try {
+            const backupKeys = Object.keys(localStorage).filter(key => key.startsWith('gestPrevBackup_'));
+            if (backupKeys.length > 0) {
+                // Prendre la sauvegarde la plus récente
+                const latestBackupKey = backupKeys.sort().pop();
+                const backupData = JSON.parse(localStorage.getItem(latestBackupKey));
+                
+                if (backupData) {
+                    this.services = backupData.services || [];
+                    this.employes = backupData.employes || [];
+                    this.planning = backupData.planning || [];
+                    this.scenarios = backupData.scenarios || [];
+                    this.simulations = backupData.simulations || [];
+                    
+                    if (backupData.currentPlanning) {
+                        localStorage.setItem('currentPlanning', backupData.currentPlanning);
+                    }
+                    
+                    console.log('🔄 Restauration depuis la sauvegarde:', latestBackupKey);
+                    this.showNotification('Données restaurées depuis la sauvegarde', 'success');
+                    return true;
+                }
+            }
+            
+            this.showNotification('Aucune sauvegarde disponible', 'warning');
+            return false;
+        } catch (error) {
+            console.error('❌ Erreur lors de la restauration:', error);
+            this.showNotification('Erreur lors de la restauration', 'error');
+            return false;
+        }
     }
 
     migrateOldServices() {
+        let hasChanges = false;
+        
         this.services = this.services.map(service => {
-            // Si le service utilise l'ancien format (avec horaires et jours)
-            if (service.horaires && service.jours) {
+            let updatedService = { ...service };
+            
+            // Migration 1: Ancien format horaires/jours vers horairesParJour
+            if (service.horaires && service.jours && !service.horairesParJour) {
                 const horairesParJour = {};
-                
-                // Convertir chaque jour en horaires par jour
                 service.jours.forEach(jour => {
                     horairesParJour[jour] = {
                         haute: service.horaires.haute,
-                        basse: service.horaires.basse
+                        basse: service.horaires.basse,
+                        fermeHaute: false,
+                        fermeBasse: false
                     };
                 });
                 
-                // Retourner le service avec le nouveau format
-                return {
-                    ...service,
-                    horairesParJour: horairesParJour,
-                    // Supprimer les anciens champs
-                    horaires: undefined,
-                    jours: undefined,
-                    joursConditionnels: undefined
+                updatedService = {
+                    ...updatedService,
+                    horairesParJour: horairesParJour
                 };
+                
+                // Supprimer les anciens champs
+                delete updatedService.horaires;
+                delete updatedService.jours;
+                delete updatedService.joursConditionnels;
+                
+                hasChanges = true;
             }
             
-            // Si le service utilise déjà le nouveau format, le retourner tel quel
-            return service;
+            // Migration 2: Ajouter des champs manquants
+            if (!updatedService.id) {
+                updatedService.id = this.generateId();
+                hasChanges = true;
+            }
+            
+            if (!updatedService.createdAt) {
+                updatedService.createdAt = new Date().toISOString();
+                hasChanges = true;
+            }
+            
+            return updatedService;
         });
         
-        // Sauvegarder les services migrés
-        this.saveToLocalStorage();
+        if (hasChanges) {
+            console.log('🔄 Services migrés vers le nouveau format');
+            this.saveToLocalStorage();
+        }
+    }
+
+    migrateOldEmployes() {
+        let hasChanges = false;
+        
+        this.employes = this.employes.map(employe => {
+            let updatedEmploye = { ...employe };
+            
+            // Migration 1: Ajouter des champs manquants
+            if (!updatedEmploye.id) {
+                updatedEmploye.id = this.generateId();
+                hasChanges = true;
+            }
+            
+            if (!updatedEmploye.disponibilite) {
+                updatedEmploye.disponibilite = {
+                    heuresAnnuelContractuelles: 1820,
+                    heuresSemaineContractuelles: 35,
+                    typeContrat: '35h'
+                };
+                hasChanges = true;
+            }
+            
+            if (!updatedEmploye.salaireHoraire) {
+                updatedEmploye.salaireHoraire = 15; // Salaire par défaut
+                hasChanges = true;
+            }
+            
+            if (!updatedEmploye.createdAt) {
+                updatedEmploye.createdAt = new Date().toISOString();
+                hasChanges = true;
+            }
+            
+            return updatedEmploye;
+        });
+        
+        if (hasChanges) {
+            console.log('🔄 Employés migrés vers le nouveau format');
+            this.saveToLocalStorage();
+        }
     }
 
     // ===== DONNÉES DE TEST =====
@@ -494,6 +678,9 @@ ensureDefaultConfiguration() {
         
         // Event listeners pour le système d'export global
         this.setupExportEventListeners();
+        
+        // Event listener pour le gestionnaire de sauvegardes
+        this.setupBackupEventListeners();
         
         // Initialisation simulation annuelle et règles légales
         this.setupAnnualSimulationEventListeners();
@@ -4227,6 +4414,16 @@ ensureDefaultConfiguration() {
                 this.closeExportDropdown();
             }
         });
+    }
+
+    setupBackupEventListeners() {
+        const backupManagerBtn = document.getElementById('backup-manager-btn');
+        
+        if (backupManagerBtn) {
+            backupManagerBtn.addEventListener('click', () => {
+                this.showBackupManager();
+            });
+        }
     }
     
     toggleExportDropdown() {
@@ -8041,6 +8238,208 @@ ensureDefaultConfiguration() {
     generateOptimizationPlan() {
         // Fonction pour générer un plan d'optimisation
         this.showNotification('Plan d\'optimisation en cours de génération', 'info');
+    }
+
+    // ===== EXPORT/IMPORT DE DONNÉES =====
+    
+    exportAllData() {
+        try {
+            const exportData = {
+                version: '2.0.0',
+                timestamp: new Date().toISOString(),
+                services: this.services,
+                employes: this.employes,
+                planning: this.planning,
+                scenarios: this.scenarios || [],
+                simulations: this.simulations || [],
+                currentPlanning: localStorage.getItem('currentPlanning')
+            };
+            
+            const dataStr = JSON.stringify(exportData, null, 2);
+            const dataBlob = new Blob([dataStr], { type: 'application/json' });
+            const url = URL.createObjectURL(dataBlob);
+            
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `gest-prev-backup-${new Date().toISOString().split('T')[0]}.json`;
+            link.click();
+            
+            URL.revokeObjectURL(url);
+            
+            this.showNotification('Export des données réussi', 'success');
+        } catch (error) {
+            console.error('❌ Erreur lors de l\'export:', error);
+            this.showNotification('Erreur lors de l\'export des données', 'error');
+        }
+    }
+
+    importData(file) {
+        try {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const importData = JSON.parse(e.target.result);
+                    
+                    // Vérifier la version
+                    if (importData.version && importData.version !== '2.0.0') {
+                        this.showNotification('Version des données incompatible. Migration en cours...', 'warning');
+                    }
+                    
+                    // Sauvegarder avant import
+                    this.createBackup();
+                    
+                    // Importer les données
+                    this.services = importData.services || [];
+                    this.employes = importData.employes || [];
+                    this.planning = importData.planning || [];
+                    this.scenarios = importData.scenarios || [];
+                    this.simulations = importData.simulations || [];
+                    
+                    if (importData.currentPlanning) {
+                        localStorage.setItem('currentPlanning', importData.currentPlanning);
+                    }
+                    
+                    // Sauvegarder les données importées
+                    this.saveToLocalStorage();
+                    
+                    // Recharger l'interface
+                    this.displayServices();
+                    this.displayEmployes();
+                    this.displayScenariosList();
+                    
+                    this.showNotification('Import des données réussi', 'success');
+                } catch (error) {
+                    console.error('❌ Erreur lors du parsing des données:', error);
+                    this.showNotification('Format de fichier invalide', 'error');
+                }
+            };
+            reader.readAsText(file);
+        } catch (error) {
+            console.error('❌ Erreur lors de l\'import:', error);
+            this.showNotification('Erreur lors de l\'import des données', 'error');
+        }
+    }
+
+    // ===== GESTION DES SAUVEGARDES =====
+    
+    showBackupManager() {
+        const backupKeys = Object.keys(localStorage).filter(key => key.startsWith('gestPrevBackup_'));
+        const backups = backupKeys.map(key => {
+            try {
+                const backupData = JSON.parse(localStorage.getItem(key));
+                return {
+                    key: key,
+                    timestamp: backupData.timestamp,
+                    date: new Date(backupData.timestamp).toLocaleString('fr-FR'),
+                    services: backupData.services?.length || 0,
+                    employes: backupData.employes?.length || 0
+                };
+            } catch (error) {
+                return null;
+            }
+        }).filter(backup => backup !== null).sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+        const modal = document.createElement('div');
+        modal.className = 'backup-manager-modal';
+        modal.innerHTML = `
+            <div class="backup-manager-content">
+                <div class="backup-manager-header">
+                    <h3><i class="fas fa-shield-alt"></i> Gestionnaire de sauvegardes</h3>
+                    <button class="close-btn" onclick="this.closest('.backup-manager-modal').remove()">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="backup-manager-body">
+                    <div class="backup-actions">
+                        <button class="btn btn-primary" onclick="gestPrev.exportAllData()">
+                            <i class="fas fa-download"></i> Exporter toutes les données
+                        </button>
+                        <label class="btn btn-secondary">
+                            <i class="fas fa-upload"></i> Importer des données
+                            <input type="file" accept=".json" onchange="gestPrev.handleFileImport(event)" style="display: none;">
+                        </label>
+                        <button class="btn btn-warning" onclick="gestPrev.createBackup(); this.disabled = true; setTimeout(() => this.disabled = false, 2000);">
+                            <i class="fas fa-save"></i> Créer une sauvegarde
+                        </button>
+                    </div>
+                    <div class="backups-list">
+                        <h4>Sauvegardes disponibles (${backups.length})</h4>
+                        ${backups.length === 0 ? '<p>Aucune sauvegarde disponible</p>' : ''}
+                        ${backups.map(backup => `
+                            <div class="backup-item">
+                                <div class="backup-info">
+                                    <span class="backup-date">${backup.date}</span>
+                                    <span class="backup-stats">
+                                        ${backup.services} services, ${backup.employes} employés
+                                    </span>
+                                </div>
+                                <div class="backup-actions">
+                                    <button class="btn btn-sm btn-primary" onclick="gestPrev.restoreFromSpecificBackup('${backup.key}')">
+                                        <i class="fas fa-undo"></i> Restaurer
+                                    </button>
+                                    <button class="btn btn-sm btn-danger" onclick="gestPrev.deleteBackup('${backup.key}')">
+                                        <i class="fas fa-trash"></i> Supprimer
+                                    </button>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        document.body.appendChild(modal);
+    }
+
+    handleFileImport(event) {
+        const file = event.target.files[0];
+        if (file) {
+            this.importData(file);
+        }
+    }
+
+    restoreFromSpecificBackup(backupKey) {
+        try {
+            const backupData = JSON.parse(localStorage.getItem(backupKey));
+            if (backupData) {
+                // Sauvegarder avant restauration
+                this.createBackup();
+                
+                this.services = backupData.services || [];
+                this.employes = backupData.employes || [];
+                this.planning = backupData.planning || [];
+                this.scenarios = backupData.scenarios || [];
+                this.simulations = backupData.simulations || [];
+                
+                if (backupData.currentPlanning) {
+                    localStorage.setItem('currentPlanning', backupData.currentPlanning);
+                }
+                
+                this.saveToLocalStorage();
+                
+                // Recharger l'interface
+                this.displayServices();
+                this.displayEmployes();
+                this.displayScenariosList();
+                
+                this.showNotification('Restauration réussie depuis la sauvegarde', 'success');
+                
+                // Fermer le modal
+                const modal = document.querySelector('.backup-manager-modal');
+                if (modal) modal.remove();
+            }
+        } catch (error) {
+            console.error('❌ Erreur lors de la restauration:', error);
+            this.showNotification('Erreur lors de la restauration', 'error');
+        }
+    }
+
+    deleteBackup(backupKey) {
+        if (confirm('Êtes-vous sûr de vouloir supprimer cette sauvegarde ?')) {
+            localStorage.removeItem(backupKey);
+            this.showNotification('Sauvegarde supprimée', 'success');
+            this.showBackupManager(); // Recharger la liste
+        }
     }
 
     // Fonction pour afficher les détails du planning dans la simulation RH
