@@ -38,9 +38,7 @@
                     <button type="submit" class="btn btn-primary">Se connecter</button>
                 </form>
                 <div class="auth-info">
-                    <p><strong>Accès test :</strong></p>
-                    <p>Identifiant : <code>admin</code></p>
-                    <p>Mot de passe : <code>gestprev2024</code></p>
+                    <p><i class="fas fa-info-circle"></i> Les identifiants d'accès vous ont été envoyés par email.</p>
                 </div>
             </div>
         </div>
@@ -745,34 +743,34 @@
                     </div>
                 </section>
 
-                <!-- Section Planning RH -->
-                <section id="rh-planning" class="module-section">
-                    <div class="section-header">
+                            <!-- Section Planning RH -->
+            <section id="rh-planning" class="module-section">
+                <div class="section-header">
                     <h3><i class="fas fa-calendar-week"></i> Planning RH</h3>
                         <p>Générez vos plannings avec sélection intelligente</p>
-                    </div>
-                    
-                    <div class="planning-container">
+                </div>
+                
+                <div class="planning-container">
                         <!-- Paramètres principaux -->
-                        <div class="planning-controls">
-                            <div class="form-section">
+                    <div class="planning-controls">
+                        <div class="form-section">
                             <h4><i class="fas fa-cog"></i> Paramètres du planning</h4>
-                                <div class="form-row">
-                                    <div class="form-group">
-                                        <label for="planning-service">Service</label>
-                                        <select id="planning-service" name="planning-service" required>
-                                            <option value="">Sélectionner un service...</option>
-                                        </select>
-                                    </div>
-                                    <div class="form-group">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="planning-service">Service</label>
+                                    <select id="planning-service" name="planning-service" required>
+                                        <option value="">Sélectionner un service...</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
                                         <label>Saison</label>
                                         <div class="saison-buttons">
                                             <button type="button" class="btn-saison active" data-saison="haute">
                                                 <i class="fas fa-sun"></i> Haute Saison
-                                            </button>
+                                        </button>
                                             <button type="button" class="btn-saison" data-saison="basse">
                                                 <i class="fas fa-cloud"></i> Basse Saison
-                                            </button>
+                                        </button>
                                     </div>
                                 </div>
                                 </div>
@@ -799,9 +797,9 @@
                                     <button type="button" class="filter-btn" data-filter="level">
                                         <i class="fas fa-star"></i> Par niveau
                                     </button>
-                                </div>
                             </div>
-                            
+                        </div>
+
                             <!-- Analyse en Temps Réel -->
                             <div class="employes-analysis">
                                 <h6><i class="fas fa-chart-bar"></i> Analyse en temps réel</h6>
@@ -850,7 +848,7 @@
                                         <h6><i class="fas fa-check-circle"></i> Employés Sélectionnés</h6>
                                         <button type="button" class="btn btn-sm btn-outline-danger" onclick="gestPrev.clearAllEmployeSelections()">
                                             <i class="fas fa-times"></i> Tout effacer
-                                        </button>
+                            </button>
                                     </div>
                                     <div class="selected-employes-list">
                                         <!-- Les employés sélectionnés seront affichés ici -->
@@ -870,7 +868,7 @@
                                 </button>
                                     <button type="button" class="btn btn-sm btn-secondary" id="ignore-suggestions">
                                         <i class="fas fa-times"></i> Ignorer
-                                </button>
+                            </button>
                                 </div>
                         </div>
                     </div>
@@ -1074,9 +1072,9 @@
                             <button type="button" id="validate-rules" class="btn btn-primary">
                                 <i class="fas fa-check"></i> Valider
                             </button>
-                            </div>
                         </div>
-                        
+                    </div>
+
                     <!-- Configuration des règles légales - 35h -->
                     <div class="legal-rules-container">
                         <div class="rules-header">
@@ -1211,8 +1209,8 @@
                 <!-- Section Simulation RH -->
                 <section id="rh-simulation" class="module-section">
                     <div class="section-header">
-                    <h3><i class="fas fa-chart-line"></i> Simulation RH</h3>
-                    <p>Simulez différents scénarios de gestion des ressources humaines</p>
+                        <h3><i class="fas fa-chart-line"></i> Simulation RH</h3>
+                        <p>Simulez différents scénarios de gestion des ressources humaines</p>
                     </div>
                     
                     <!-- Simulation RH -->
@@ -1260,15 +1258,15 @@
                                     <small>Sélectionnez les employés à inclure dans la simulation</small>
                                 </div>
                             </div>
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="simulation-periode">Période de simulation</label>
-                                <select id="simulation-periode" name="simulation-periode" required>
-                                    <option value="1">1 mois</option>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="simulation-periode">Période de simulation</label>
+                                    <select id="simulation-periode" name="simulation-periode" required>
+                                        <option value="1">1 mois</option>
                                         <option value="3">3 mois (trimestre)</option>
                                         <option value="6">6 mois (semestre)</option>
                                         <option value="12" selected>12 mois (année)</option>
-                                </select>
+                                    </select>
                                     <small>Durée de la simulation</small>
                                 </div>
                                 <div class="form-group">
@@ -1278,7 +1276,7 @@
                                 </div>
                             </div>
                             <div class="form-row">
-                            <div class="form-group">
+                                <div class="form-group">
                                     <label for="simulation-view">Vue des employés</label>
                                     <select id="simulation-view" name="simulation-view">
                                         <option value="all">Tous les employés du service</option>
@@ -1288,9 +1286,9 @@
                                 </div>
                             </div>
                             <div class="form-actions">
-                                <button type="button" id="run-annual-simulation" class="btn btn-primary">
-                                    <i class="fas fa-calculator"></i> Analyser la masse salariale
-                                </button>
+                            <button type="button" id="run-annual-simulation" class="btn btn-primary">
+                                <i class="fas fa-calculator"></i> Analyser la masse salariale
+                            </button>
                                 <button type="button" id="run-advanced-rh-simulation" class="btn btn-secondary">
                                     <i class="fas fa-users-cog"></i> Simulation RH avancée
                                 </button>
