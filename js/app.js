@@ -15,29 +15,57 @@ class GestPrev {
             return;
         }
         
+        // ===== SYNCHRONISATION UNIVERSELLE AUTOMATIQUE =====
         this.loadFromLocalStorage();
-    
-        // Créer des données de test si aucune donnée n'existe ou si les données sont vides
-        if (this.services.length === 0 || this.employes.length === 0) {
-            console.log('Création des données de test...');
-            this.createTestData();
-        }
-    
-        // ===== VÉRIFICATION ET RESTAURATION DE LA CONFIGURATION =====
-        this.ensureDefaultConfiguration();
-    
-        this.setupEventListeners();
-        this.setupCheckboxHandlers();
-        this.updateAllSelects();
-        this.displayServices();
-        this.displayEmployes();
         
-        // Initialiser l'affichage vide du planning
-        this.initializePlanningDisplay();
+        // Synchroniser automatiquement avec le cloud pour TOUS les comptes
+        this.syncWithCloud().then(() => {
+            console.log('✅ Synchronisation universelle terminée');
+            
+            // Créer des données de test si aucune donnée n'existe
+            if (this.services.length === 0 || this.employes.length === 0) {
+                console.log('Création des données de test...');
+                this.createTestData();
+            }
+            
+            // ===== VÉRIFICATION ET RESTAURATION DE LA CONFIGURATION =====
+            this.ensureDefaultConfiguration();
+            
+            this.setupEventListeners();
+            this.setupCheckboxHandlers();
+            this.updateAllSelects();
+            this.displayServices();
+            this.displayEmployes();
+            
+            // Initialiser l'affichage vide du planning
+            this.initializePlanningDisplay();
+            
+            // Afficher une notification de synchronisation réussie
+            this.showNotification('Données synchronisées avec tous les comptes', 'success');
+            
+        }).catch((error) => {
+            console.error('❌ Erreur lors de la synchronisation universelle:', error);
+            
+            // Continuer avec les données locales en cas d'erreur
+            if (this.services.length === 0 || this.employes.length === 0) {
+                console.log('Création des données de test...');
+                this.createTestData();
+            }
+            
+            this.ensureDefaultConfiguration();
+            this.setupEventListeners();
+            this.setupCheckboxHandlers();
+            this.updateAllSelects();
+            this.displayServices();
+            this.displayEmployes();
+            this.initializePlanningDisplay();
+        });
     }
 
     // ===== AUTHENTIFICATION =====
     checkAuthentication() {
+        console.log('🔍 Vérification de l\'authentification...');
+        
         const authToken = localStorage.getItem('gestPrevAuth');
         if (authToken) {
             try {
@@ -45,41 +73,50 @@ class GestPrev {
                 const now = Date.now();
                 // Token valide pendant 24h
                 if (authData.expires > now) {
+                    console.log('✅ Token valide trouvé');
                     this.isAuthenticated = true;
                     document.body.classList.add('authenticated');
                     
-                    // Masquer l'overlay d'authentification
+                    // MASQUAGE FORCÉ de l'overlay d'authentification
                     const authOverlay = document.getElementById('auth-overlay');
                     if (authOverlay) {
-                        authOverlay.style.display = 'none';
-                        authOverlay.style.visibility = 'hidden';
-                        authOverlay.style.opacity = '0';
+                        authOverlay.style.display = 'none !important';
+                        authOverlay.style.visibility = 'hidden !important';
+                        authOverlay.style.opacity = '0 !important';
+                        authOverlay.style.zIndex = '-1 !important';
+                        authOverlay.style.pointerEvents = 'none !important';
                     }
                     
-                    // Forcer l'affichage du contenu principal
+                    // FORCAGE de l'affichage du contenu principal
                     const mainHeader = document.querySelector('.main-header');
                     const moduleBanner = document.querySelector('.module-banner');
                     const mainContent = document.querySelector('.main-content');
                     
                     if (mainHeader) {
-                        mainHeader.style.display = 'block';
-                        mainHeader.style.visibility = 'visible';
+                        mainHeader.style.display = 'block !important';
+                        mainHeader.style.visibility = 'visible !important';
+                        mainHeader.style.opacity = '1 !important';
                     }
                     if (moduleBanner) {
-                        moduleBanner.style.display = 'block';
-                        moduleBanner.style.visibility = 'visible';
+                        moduleBanner.style.display = 'block !important';
+                        moduleBanner.style.visibility = 'visible !important';
+                        moduleBanner.style.opacity = '1 !important';
                     }
                     if (mainContent) {
-                        mainContent.style.display = 'block';
-                        mainContent.style.visibility = 'visible';
+                        mainContent.style.display = 'block !important';
+                        mainContent.style.visibility = 'visible !important';
+                        mainContent.style.opacity = '1 !important';
                     }
                     
+                    console.log('✅ Authentification réussie - Interface affichée');
                     return;
                 }
             } catch (e) {
-                console.error('Erreur lors de la vérification du token:', e);
+                console.error('❌ Erreur lors de la vérification du token:', e);
             }
         }
+        
+        console.log('❌ Pas de token valide - Affichage de la page de connexion');
         this.isAuthenticated = false;
         document.body.classList.remove('authenticated');
         
@@ -838,31 +875,53 @@ class GestPrev {
     // Fonction pour synchroniser les données avec le cloud (Netlify)
     async syncWithCloud() {
         try {
-            console.log('☁️ Synchronisation avec le cloud...');
+            console.log('☁️ Synchronisation universelle avec le cloud...');
             
-            // Vérifier si on est sur Netlify ou local
+            // Vérifier si on est sur Netlify, GitHub Pages ou local
             const isNetlify = window.location.hostname.includes('netlify.app');
-            const isLocal = window.location.hostname.includes('localhost') || window.location.hostname.includes('127.0.0.1');
+            const isGitHubPages = window.location.hostname.includes('github.io');
+            const isLocal = window.location.hostname.includes('localhost') || 
+                           window.location.hostname.includes('127.0.0.1') ||
+                           window.location.hostname.includes('file://');
             
-            if (isNetlify) {
-                // Sur Netlify : charger depuis le localStorage local et essayer de récupérer depuis le cloud
+            if (isNetlify || isGitHubPages) {
+                // Sur Netlify/GitHub Pages : charger depuis le cloud
+                console.log('🌐 Environnement cloud détecté - Chargement depuis le cloud');
                 await this.loadFromCloud();
             } else if (isLocal) {
-                // Sur local : envoyer les données vers le cloud
+                // Sur local : envoyer vers le cloud
+                console.log('🏠 Environnement local détecté - Envoi vers le cloud');
+                await this.saveToCloud();
+            } else {
+                // Environnement inconnu : synchronisation bidirectionnelle
+                console.log('❓ Environnement inconnu - Synchronisation bidirectionnelle');
+                await this.loadFromCloud();
                 await this.saveToCloud();
             }
             
-            this.showNotification('Synchronisation cloud terminée', 'success');
+            this.showNotification('Synchronisation universelle terminée', 'success');
             
         } catch (error) {
-            console.error('❌ Erreur lors de la synchronisation cloud:', error);
-            this.showNotification('Erreur lors de la synchronisation cloud', 'error');
+            console.error('❌ Erreur lors de la synchronisation universelle:', error);
+            this.showNotification('Erreur lors de la synchronisation universelle', 'error');
         }
     }
     
     // Sauvegarder les données vers le cloud
     async saveToCloud() {
         try {
+            // Récupérer l'utilisateur actuel
+            const authToken = localStorage.getItem('gestPrevAuth');
+            let currentUser = 'unknown';
+            if (authToken) {
+                try {
+                    const authData = JSON.parse(authToken);
+                    currentUser = authData.username || 'unknown';
+                } catch (e) {
+                    console.error('Erreur lors de la récupération de l\'utilisateur:', e);
+                }
+            }
+            
             const dataToSync = {
                 services: this.services,
                 employes: this.employes,
@@ -872,7 +931,10 @@ class GestPrev {
                 currentPlanning: this.currentPlanning,
                 version: '2.0.0',
                 lastSave: new Date().toISOString(),
-                source: window.location.hostname
+                source: window.location.hostname,
+                user: currentUser,
+                // Ajouter un timestamp pour éviter les conflits
+                timestamp: Date.now()
             };
             
             // Sauvegarder dans le localStorage local avec une clé spéciale pour le cloud
@@ -884,7 +946,7 @@ class GestPrev {
             
             if (externalSuccess) {
                 console.log('☁️ Données envoyées vers le cloud externe avec succès');
-                this.showNotification('Données synchronisées vers le cloud externe', 'success');
+                this.showNotification(`Données synchronisées par ${currentUser}`, 'success');
             } else {
                 console.log('☁️ Données sauvegardées localement (cloud externe non disponible)');
                 this.showNotification('Données sauvegardées localement', 'info');
