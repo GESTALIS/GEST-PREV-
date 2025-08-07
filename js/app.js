@@ -189,16 +189,35 @@ class GestPrev {
             this.isAuthenticated = true;
             document.body.classList.add('authenticated');
             
-            // Masquer l'overlay d'authentification
+            // Masquer l'overlay d'authentification de manière forcée
             const authOverlay = document.getElementById('auth-overlay');
             if (authOverlay) {
                 authOverlay.style.display = 'none';
+                authOverlay.style.visibility = 'hidden';
+                authOverlay.style.opacity = '0';
+                authOverlay.style.zIndex = '-1';
+                authOverlay.style.pointerEvents = 'none';
             }
             
-            // Afficher le contenu principal
+            // Afficher le contenu principal de manière forcée
             const mainHeader = document.querySelector('.main-header');
+            const moduleBanner = document.querySelector('.module-banner');
+            const mainContent = document.querySelector('.main-content');
+            
             if (mainHeader) {
                 mainHeader.style.display = 'block';
+                mainHeader.style.visibility = 'visible';
+                mainHeader.style.opacity = '1';
+            }
+            if (moduleBanner) {
+                moduleBanner.style.display = 'block';
+                moduleBanner.style.visibility = 'visible';
+                moduleBanner.style.opacity = '1';
+            }
+            if (mainContent) {
+                mainContent.style.display = 'block';
+                mainContent.style.visibility = 'visible';
+                mainContent.style.opacity = '1';
             }
             
             // Initialiser l'application après authentification
@@ -465,72 +484,7 @@ class GestPrev {
         document.body.classList.remove('authenticated');
     }
 
-    handleLogin() {
-        const username = document.getElementById('username').value;
-        const password = document.getElementById('password').value;
-        
-        // Identifiants de test
-        const validCredentials = {
-            'admin': 'gestprev2024',
-            'rh': 'rh2024',
-            'ca': 'ca2024'
-        };
-        
-        if (validCredentials[username] && validCredentials[username] === password) {
-            // Nettoyer l'état précédent
-            this.services = [];
-            this.employes = [];
-            this.planning = [];
-            
-            // Créer un token d'authentification
-            const authData = {
-                username: username,
-                expires: Date.now() + (24 * 60 * 60 * 1000), // 24h
-                timestamp: Date.now()
-            };
-            
-            localStorage.setItem('gestPrevAuth', JSON.stringify(authData));
-            this.isAuthenticated = true;
-            document.body.classList.add('authenticated');
-            
-            // Masquer l'overlay d'authentification
-            const authOverlay = document.getElementById('auth-overlay');
-            if (authOverlay) {
-                authOverlay.style.display = 'none';
-            }
-            
-            // Afficher le contenu principal
-            const mainHeader = document.querySelector('.main-header');
-            if (mainHeader) {
-                mainHeader.style.display = 'block';
-            }
-            
-            // Initialiser l'application après authentification
-            this.loadFromLocalStorage();
-            
-            // Créer des données de test si nécessaire
-            if (this.services.length === 0 || this.employes.length === 0) {
-                this.createTestData();
-            }
-            
-            // Configuration et affichage
-            this.ensureDefaultConfiguration();
-            this.setupEventListeners();
-            this.setupCheckboxHandlers();
-            this.updateAllSelects();
-            this.displayServices();
-            this.displayEmployes();
-            this.initializePlanningDisplay();
-            
-            this.showNotification('Connexion réussie ! Bienvenue dans GEST PREV.', 'success');
-        } else {
-            this.showNotification('Identifiants incorrects. Veuillez réessayer.', 'error');
-            
-            // Vider le champ mot de passe en cas d'erreur
-            const passwordField = document.getElementById('password');
-            if (passwordField) passwordField.value = '';
-        }
-    }
+
 
     logout() {
         // Nettoyer complètement l'authentification
@@ -762,12 +716,12 @@ class GestPrev {
             this.createBackup();
             
             // Charger les données partagées entre tous les utilisateurs
-            const savedServices = localStorage.getItem('gestPrevUniversalServices') || localStorage.getItem('gestPrevServices');
-            const savedEmployes = localStorage.getItem('gestPrevUniversalEmployes') || localStorage.getItem('gestPrevEmployes');
-            const savedPlanning = localStorage.getItem('gestPrevUniversalPlanning') || localStorage.getItem('gestPrevPlanning');
-            const savedScenarios = localStorage.getItem('gestPrevUniversalScenarios') || localStorage.getItem('gestPrevScenarios');
-            const savedSimulations = localStorage.getItem('gestPrevUniversalSimulations') || localStorage.getItem('gestPrevSimulations');
-            const savedCurrentPlanning = localStorage.getItem('gestPrevUniversalCurrentPlanning') || localStorage.getItem('currentPlanning');
+            const savedServices = localStorage.getItem('gestPrevServices');
+            const savedEmployes = localStorage.getItem('gestPrevEmployes');
+            const savedPlanning = localStorage.getItem('gestPrevPlanning');
+            const savedScenarios = localStorage.getItem('gestPrevScenarios');
+            const savedSimulations = localStorage.getItem('gestPrevSimulations');
+            const savedCurrentPlanning = localStorage.getItem('currentPlanning');
             
             // Charger les services avec migration
             if (savedServices) {
@@ -825,11 +779,11 @@ class GestPrev {
             this.createBackup();
             
             // Sauvegarder les données partagées entre tous les utilisateurs
-            localStorage.setItem('gestPrevUniversalServices', JSON.stringify(this.services)); localStorage.setItem('gestPrevServices', JSON.stringify(this.services));
-            localStorage.setItem('gestPrevUniversalEmployes', JSON.stringify(this.employes)); localStorage.setItem('gestPrevEmployes', JSON.stringify(this.employes));
-            localStorage.setItem('gestPrevUniversalPlanning', JSON.stringify(this.planning)); localStorage.setItem('gestPrevPlanning', JSON.stringify(this.planning));
-            localStorage.setItem('gestPrevUniversalScenarios', JSON.stringify(this.scenarios || [])); localStorage.setItem('gestPrevScenarios', JSON.stringify(this.scenarios || []));
-            localStorage.setItem('gestPrevUniversalSimulations', JSON.stringify(this.simulations || [])); localStorage.setItem('gestPrevSimulations', JSON.stringify(this.simulations || []));
+            localStorage.setItem('gestPrevServices', JSON.stringify(this.services));
+            localStorage.setItem('gestPrevEmployes', JSON.stringify(this.employes));
+            localStorage.setItem('gestPrevPlanning', JSON.stringify(this.planning));
+            localStorage.setItem('gestPrevScenarios', JSON.stringify(this.scenarios || []));
+            localStorage.setItem('gestPrevSimulations', JSON.stringify(this.simulations || []));
             localStorage.setItem('gestPrevVersion', '2.0.0'); // Version actuelle
             localStorage.setItem('gestPrevLastSave', new Date().toISOString());
             
@@ -990,7 +944,7 @@ class GestPrev {
                 }
                 
                 // Sauvegarder localement
-                this.saveToLocalStorage(); this.syncWithCloud().then(() => console.log(" Synchronisation cloud r�ussie\)).catch((error) => console.error(" Erreur synchronisation cloud:\, error));
+                this.saveToLocalStorage();
                 
                 console.log('☁️ Données chargées depuis le localStorage cloud');
                 this.showNotification('Données synchronisées depuis le localStorage cloud', 'success');
@@ -1075,7 +1029,7 @@ class GestPrev {
                     }
                     
                     // Sauvegarder localement
-                    this.saveToLocalStorage(); this.syncWithCloud().then(() => console.log(" Synchronisation cloud r�ussie\)).catch((error) => console.error(" Erreur synchronisation cloud:\, error));
+                    this.saveToLocalStorage();
                     
                     console.log('☁️ Données chargées depuis JSONBin.io');
                     return true;
@@ -1212,7 +1166,7 @@ class GestPrev {
         
         if (hasChanges) {
             console.log('🔄 Services migrés vers le nouveau format');
-            this.saveToLocalStorage(); this.syncWithCloud().then(() => console.log(" Synchronisation cloud r�ussie\)).catch((error) => console.error(" Erreur synchronisation cloud:\, error));
+            this.saveToLocalStorage();
         }
     }
 
@@ -1252,7 +1206,7 @@ class GestPrev {
         
         if (hasChanges) {
             console.log('🔄 Employés migrés vers le nouveau format');
-            this.saveToLocalStorage(); this.syncWithCloud().then(() => console.log(" Synchronisation cloud r�ussie\)).catch((error) => console.error(" Erreur synchronisation cloud:\, error));
+            this.saveToLocalStorage();
         }
     }
 
@@ -1519,7 +1473,7 @@ class GestPrev {
         ];
 
         // Sauvegarder les données de test
-        this.saveToLocalStorage(); this.syncWithCloud().then(() => console.log(" Synchronisation cloud r�ussie\)).catch((error) => console.error(" Erreur synchronisation cloud:\, error));
+        this.saveToLocalStorage();
     }
 
     // ===== FONCTION POUR FORCER LA CRÉATION DES DONNÉES DE TEST =====
@@ -1839,7 +1793,7 @@ class GestPrev {
         };
 
         this.services.push(service);
-        this.saveToLocalStorage(); this.syncWithCloud().then(() => console.log(" Synchronisation cloud r�ussie\)).catch((error) => console.error(" Erreur synchronisation cloud:\, error));
+        this.saveToLocalStorage();
         this.updateAllSelects();
         this.displayServices();
         this.hideServiceForm();
@@ -1849,7 +1803,7 @@ class GestPrev {
 
     deleteService(serviceId) {
         this.services = this.services.filter(service => service.id !== serviceId);
-        this.saveToLocalStorage(); this.syncWithCloud().then(() => console.log(" Synchronisation cloud r�ussie\)).catch((error) => console.error(" Erreur synchronisation cloud:\, error));
+        this.saveToLocalStorage();
         this.updateAllSelects();
         this.displayServices();
         this.showNotification('Service supprimé avec succès !', 'info');
@@ -1965,7 +1919,7 @@ class GestPrev {
                 updatedAt: new Date().toISOString()
             };
             
-            this.saveToLocalStorage(); this.syncWithCloud().then(() => console.log(" Synchronisation cloud r�ussie\)).catch((error) => console.error(" Erreur synchronisation cloud:\, error));
+            this.saveToLocalStorage();
             this.updateAllSelects();
             this.displayServices();
             this.hideServiceForm();
@@ -2219,7 +2173,7 @@ class GestPrev {
         }
 
         this.employes.push(employe);
-        this.saveToLocalStorage(); this.syncWithCloud().then(() => console.log(" Synchronisation cloud r�ussie\)).catch((error) => console.error(" Erreur synchronisation cloud:\, error));
+        this.saveToLocalStorage();
         this.updateAllSelects();
         this.displayEmployes();
         
@@ -2236,7 +2190,7 @@ class GestPrev {
 
     deleteEmploye(employeId) {
         this.employes = this.employes.filter(employe => employe.id !== employeId);
-        this.saveToLocalStorage(); this.syncWithCloud().then(() => console.log(" Synchronisation cloud r�ussie\)).catch((error) => console.error(" Erreur synchronisation cloud:\, error));
+        this.saveToLocalStorage();
         this.updateAllSelects();
         this.displayEmployes();
         this.showNotification('Employé supprimé avec succès !', 'info');
@@ -2376,7 +2330,7 @@ class GestPrev {
             return;
         }
 
-        this.saveToLocalStorage(); this.syncWithCloud().then(() => console.log(" Synchronisation cloud r�ussie\)).catch((error) => console.error(" Erreur synchronisation cloud:\, error));
+        this.saveToLocalStorage();
         this.updateAllSelects();
         this.displayEmployes();
         
@@ -3954,7 +3908,7 @@ class GestPrev {
         this.vacationPeriods = { ...this.vacationPeriods, ...scenario.config.vacationPeriods };
 
         // Sauvegarder et mettre à jour l'affichage
-        this.saveToLocalStorage(); this.syncWithCloud().then(() => console.log(" Synchronisation cloud r�ussie\)).catch((error) => console.error(" Erreur synchronisation cloud:\, error));
+        this.saveToLocalStorage();
         this.displayServices();
         this.displayEmployes();
         this.updateAllSelects();
@@ -4087,7 +4041,7 @@ class GestPrev {
         const employe = this.employes.find(e => e.id === employeId);
         if (employe) {
             employe.modeGestion = mode;
-            this.saveToLocalStorage(); this.syncWithCloud().then(() => console.log(" Synchronisation cloud r�ussie\)).catch((error) => console.error(" Erreur synchronisation cloud:\, error));
+            this.saveToLocalStorage();
             this.showNotification(`Mode ${mode} activé pour ${employe.prenom} ${employe.nom}`, 'info');
         }
     }
@@ -9278,7 +9232,7 @@ class GestPrev {
                     }
                     
                     // Sauvegarder les données importées
-                    this.saveToLocalStorage(); this.syncWithCloud().then(() => console.log(" Synchronisation cloud r�ussie\)).catch((error) => console.error(" Erreur synchronisation cloud:\, error));
+                    this.saveToLocalStorage();
                     
                     // Recharger l'interface
                     this.displayServices();
@@ -9393,7 +9347,7 @@ class GestPrev {
                     localStorage.setItem('currentPlanning', backupData.currentPlanning);
                 }
                 
-                this.saveToLocalStorage(); this.syncWithCloud().then(() => console.log(" Synchronisation cloud r�ussie\)).catch((error) => console.error(" Erreur synchronisation cloud:\, error));
+                this.saveToLocalStorage();
                 
                 // Recharger l'interface
                 this.displayServices();
