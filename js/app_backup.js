@@ -762,12 +762,12 @@ class GestPrev {
             this.createBackup();
             
             // Charger les données partagées entre tous les utilisateurs
-            const savedServices = localStorage.getItem('gestPrevUniversalServices') || localStorage.getItem('gestPrevServices');
-            const savedEmployes = localStorage.getItem('gestPrevUniversalEmployes') || localStorage.getItem('gestPrevEmployes');
-            const savedPlanning = localStorage.getItem('gestPrevUniversalPlanning') || localStorage.getItem('gestPrevPlanning');
-            const savedScenarios = localStorage.getItem('gestPrevUniversalScenarios') || localStorage.getItem('gestPrevScenarios');
-            const savedSimulations = localStorage.getItem('gestPrevUniversalSimulations') || localStorage.getItem('gestPrevSimulations');
-            const savedCurrentPlanning = localStorage.getItem('gestPrevUniversalCurrentPlanning') || localStorage.getItem('currentPlanning');
+            const savedServices = localStorage.getItem('gestPrevServices');
+            const savedEmployes = localStorage.getItem('gestPrevEmployes');
+            const savedPlanning = localStorage.getItem('gestPrevPlanning');
+            const savedScenarios = localStorage.getItem('gestPrevScenarios');
+            const savedSimulations = localStorage.getItem('gestPrevSimulations');
+            const savedCurrentPlanning = localStorage.getItem('currentPlanning');
             
             // Charger les services avec migration
             if (savedServices) {
@@ -825,11 +825,11 @@ class GestPrev {
             this.createBackup();
             
             // Sauvegarder les données partagées entre tous les utilisateurs
-            localStorage.setItem('gestPrevUniversalServices', JSON.stringify(this.services)); localStorage.setItem('gestPrevServices', JSON.stringify(this.services));
-            localStorage.setItem('gestPrevUniversalEmployes', JSON.stringify(this.employes)); localStorage.setItem('gestPrevEmployes', JSON.stringify(this.employes));
-            localStorage.setItem('gestPrevUniversalPlanning', JSON.stringify(this.planning)); localStorage.setItem('gestPrevPlanning', JSON.stringify(this.planning));
-            localStorage.setItem('gestPrevUniversalScenarios', JSON.stringify(this.scenarios || [])); localStorage.setItem('gestPrevScenarios', JSON.stringify(this.scenarios || []));
-            localStorage.setItem('gestPrevUniversalSimulations', JSON.stringify(this.simulations || [])); localStorage.setItem('gestPrevSimulations', JSON.stringify(this.simulations || []));
+            localStorage.setItem('gestPrevServices', JSON.stringify(this.services));
+            localStorage.setItem('gestPrevEmployes', JSON.stringify(this.employes));
+            localStorage.setItem('gestPrevPlanning', JSON.stringify(this.planning));
+            localStorage.setItem('gestPrevScenarios', JSON.stringify(this.scenarios || []));
+            localStorage.setItem('gestPrevSimulations', JSON.stringify(this.simulations || []));
             localStorage.setItem('gestPrevVersion', '2.0.0'); // Version actuelle
             localStorage.setItem('gestPrevLastSave', new Date().toISOString());
             
