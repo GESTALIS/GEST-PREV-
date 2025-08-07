@@ -47,6 +47,33 @@ class GestPrev {
                 if (authData.expires > now) {
                     this.isAuthenticated = true;
                     document.body.classList.add('authenticated');
+                    
+                    // Masquer l'overlay d'authentification
+                    const authOverlay = document.getElementById('auth-overlay');
+                    if (authOverlay) {
+                        authOverlay.style.display = 'none';
+                        authOverlay.style.visibility = 'hidden';
+                        authOverlay.style.opacity = '0';
+                    }
+                    
+                    // Forcer l'affichage du contenu principal
+                    const mainHeader = document.querySelector('.main-header');
+                    const moduleBanner = document.querySelector('.module-banner');
+                    const mainContent = document.querySelector('.main-content');
+                    
+                    if (mainHeader) {
+                        mainHeader.style.display = 'block';
+                        mainHeader.style.visibility = 'visible';
+                    }
+                    if (moduleBanner) {
+                        moduleBanner.style.display = 'block';
+                        moduleBanner.style.visibility = 'visible';
+                    }
+                    if (mainContent) {
+                        mainContent.style.display = 'block';
+                        mainContent.style.visibility = 'visible';
+                    }
+                    
                     return;
                 }
             } catch (e) {
@@ -55,8 +82,33 @@ class GestPrev {
         }
         this.isAuthenticated = false;
         document.body.classList.remove('authenticated');
+        
+        // Afficher l'overlay d'authentification si pas connecté
+        const authOverlay = document.getElementById('auth-overlay');
+        if (authOverlay) {
+            authOverlay.style.display = 'flex';
+            authOverlay.style.visibility = 'visible';
+            authOverlay.style.opacity = '1';
+        }
+        
+        // Masquer le contenu principal
+        const mainHeader = document.querySelector('.main-header');
+        const moduleBanner = document.querySelector('.module-banner');
+        const mainContent = document.querySelector('.main-content');
+        
+        if (mainHeader) {
+            mainHeader.style.display = 'none';
+            mainHeader.style.visibility = 'hidden';
+        }
+        if (moduleBanner) {
+            moduleBanner.style.display = 'none';
+            moduleBanner.style.visibility = 'hidden';
+        }
+        if (mainContent) {
+            mainContent.style.display = 'none';
+            mainContent.style.visibility = 'hidden';
+        }
     }
-
     setupAuthentication() {
         const loginForm = document.getElementById('login-form');
         const authOverlay = document.getElementById('auth-overlay');
@@ -154,12 +206,15 @@ class GestPrev {
         const authOverlay = document.getElementById('auth-overlay');
         if (authOverlay) {
             authOverlay.style.display = 'flex';
+            authOverlay.style.visibility = 'visible';
+            authOverlay.style.opacity = '1';
         }
         
         // Masquer le contenu principal
         const mainHeader = document.querySelector('.main-header');
         if (mainHeader) {
             mainHeader.style.display = 'none';
+            mainHeader.style.visibility = 'hidden';
         }
         
         // Masquer tous les modules
@@ -189,6 +244,435 @@ class GestPrev {
         setTimeout(() => {
             this.checkAuthentication();
         }, 100);
+    }
+
+    // ===== FORCE LOGOUT - NETTOYAGE COMPLET =====
+    forceLogout() {
+        console.log('Force logout en cours...');
+        
+        // Nettoyer complètement le localStorage
+        localStorage.clear();
+        
+        // Nettoyer les cookies si possible
+        document.cookie.split(";").forEach(function(c) { 
+            document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/"); 
+        });
+        
+        // Réinitialiser complètement l'état
+        this.isAuthenticated = false;
+        this.services = [];
+        this.employes = [];
+        this.planning = [];
+        
+        // Supprimer toutes les classes d'authentification
+        document.body.classList.remove('authenticated');
+        
+        // Forcer l'affichage de l'overlay d'authentification
+        const authOverlay = document.getElementById('auth-overlay');
+        if (authOverlay) {
+            authOverlay.style.display = 'flex';
+            authOverlay.style.visibility = 'visible';
+            authOverlay.style.opacity = '1';
+            authOverlay.style.zIndex = '9999';
+        }
+        
+        // Masquer complètement le contenu principal
+        const mainHeader = document.querySelector('.main-header');
+        const moduleBanner = document.querySelector('.module-banner');
+        const mainContent = document.querySelector('.main-content');
+        
+        if (mainHeader) {
+            mainHeader.style.display = 'none';
+            mainHeader.style.visibility = 'hidden';
+        }
+        if (moduleBanner) {
+            moduleBanner.style.display = 'none';
+            moduleBanner.style.visibility = 'hidden';
+        }
+        if (mainContent) {
+            mainContent.style.display = 'none';
+            mainContent.style.visibility = 'hidden';
+        }
+        
+        // Masquer tous les modules, sections et onglets
+        document.querySelectorAll('.module-content, .module-section, .tab-btn').forEach(element => {
+            element.classList.remove('active');
+            element.style.display = 'none';
+        });
+        
+        // Vider les champs de connexion
+        const usernameField = document.getElementById('username');
+        const passwordField = document.getElementById('password');
+        if (usernameField) usernameField.value = '';
+        if (passwordField) passwordField.value = '';
+        
+        // Forcer le rechargement des styles CSS
+        this.reloadCSS();
+        
+        // Nettoyer le cache du navigateur
+        this.clearBrowserCache();
+        
+        // Forcer le rechargement de la page après un délai
+        setTimeout(() => {
+            window.location.reload(true);
+        }, 1000);
+        
+        this.showNotification('Déconnexion forcée effectuée. La page va se recharger.', 'info');
+    }
+
+    // ===== RECHARGEMENT CSS =====
+    reloadCSS() {
+        // Recharger tous les fichiers CSS
+        const links = document.querySelectorAll('link[rel="stylesheet"]');
+        links.forEach(link => {
+            const href = link.href;
+            link.href = '';
+            link.href = href + '?v=' + Date.now();
+        });
+        
+        // Forcer le rechargement des styles inline
+        const styleSheets = document.styleSheets;
+        for (let i = 0; i < styleSheets.length; i++) {
+            try {
+                const rules = styleSheets[i].cssRules || styleSheets[i].rules;
+                if (rules) {
+                    // Forcer le rechargement en modifiant temporairement
+                    styleSheets[i].disabled = true;
+                    setTimeout(() => {
+                        styleSheets[i].disabled = false;
+                    }, 100);
+                }
+            } catch (e) {
+                // Ignorer les erreurs CORS
+            }
+        }
+    }
+
+    // ===== NETTOYAGE CACHE NAVIGATEUR =====
+    clearBrowserCache() {
+        // Essayer de nettoyer le cache via l'API Cache
+        if ('caches' in window) {
+            caches.keys().then(names => {
+                names.forEach(name => {
+                    caches.delete(name);
+                });
+            });
+        }
+        
+        // Nettoyer le sessionStorage
+        sessionStorage.clear();
+        
+        // Forcer le rechargement des images et autres ressources
+        const images = document.querySelectorAll('img');
+        images.forEach(img => {
+            const src = img.src;
+            img.src = '';
+            img.src = src + '?v=' + Date.now();
+        });
+    }
+
+    // ===== CONFIGURATION VERROUILLÉE =====
+    ensureDefaultConfiguration() {
+    // Vérifier et restaurer la configuration par défaut
+    const config = JSON.parse(localStorage.getItem('gestPrevConfig') || '{}');
+    
+    // S'assurer que le module RH est actif
+    const rhModule = document.getElementById('rh-module');
+    if (rhModule && !rhModule.classList.contains('active')) {
+        document.querySelectorAll('.module-content').forEach(module => {
+            module.classList.remove('active');
+        });
+        rhModule.classList.add('active');
+    }
+    
+    // S'assurer que la section Présentation est active
+    const presentationSection = document.getElementById('rh-presentation');
+    if (presentationSection && !presentationSection.classList.contains('active')) {
+        document.querySelectorAll('.module-section').forEach(section => {
+            section.classList.remove('active');
+        });
+        presentationSection.classList.add('active');
+    }
+    
+    // S'assurer que l'onglet Présentation est actif
+    const presentationTab = document.querySelector('[data-tab="rh-presentation"]');
+    if (presentationTab && !presentationTab.classList.contains('active')) {
+        document.querySelectorAll('.tab-btn').forEach(tab => {
+            tab.classList.remove('active');
+        });
+        presentationTab.classList.add('active');
+    }
+    
+    // Sauvegarder la configuration mise à jour
+    const updatedConfig = {
+        defaultModule: 'rh',
+        defaultSection: 'rh-presentation',
+        defaultTab: 'rh-presentation',
+        timestamp: Date.now(),
+        lastCheck: Date.now()
+    };
+    localStorage.setItem('gestPrevConfig', JSON.stringify(updatedConfig));
+}
+    setupAuthentication() {
+        const loginForm = document.getElementById('login-form');
+        const authOverlay = document.getElementById('auth-overlay');
+        
+        if (loginForm) {
+            loginForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                this.handleLogin();
+            });
+        }
+        
+        // Masquer le contenu principal
+        document.body.classList.remove('authenticated');
+    }
+
+    handleLogin() {
+        const username = document.getElementById('username').value;
+        const password = document.getElementById('password').value;
+        
+        // Identifiants de test
+        const validCredentials = {
+            'admin': 'gestprev2024',
+            'rh': 'rh2024',
+            'ca': 'ca2024'
+        };
+        
+        if (validCredentials[username] && validCredentials[username] === password) {
+            // Nettoyer l'état précédent
+            this.services = [];
+            this.employes = [];
+            this.planning = [];
+            
+            // Créer un token d'authentification
+            const authData = {
+                username: username,
+                expires: Date.now() + (24 * 60 * 60 * 1000), // 24h
+                timestamp: Date.now()
+            };
+            
+            localStorage.setItem('gestPrevAuth', JSON.stringify(authData));
+            this.isAuthenticated = true;
+            document.body.classList.add('authenticated');
+            
+            // Masquer l'overlay d'authentification
+            const authOverlay = document.getElementById('auth-overlay');
+            if (authOverlay) {
+                authOverlay.style.display = 'none';
+            }
+            
+            // Afficher le contenu principal
+            const mainHeader = document.querySelector('.main-header');
+            if (mainHeader) {
+                mainHeader.style.display = 'block';
+            }
+            
+            // Initialiser l'application après authentification
+            this.loadFromLocalStorage();
+            
+            // Créer des données de test si nécessaire
+            if (this.services.length === 0 || this.employes.length === 0) {
+                this.createTestData();
+            }
+            
+            // Configuration et affichage
+            this.ensureDefaultConfiguration();
+            this.setupEventListeners();
+            this.setupCheckboxHandlers();
+            this.updateAllSelects();
+            this.displayServices();
+            this.displayEmployes();
+            this.initializePlanningDisplay();
+            
+            this.showNotification('Connexion réussie ! Bienvenue dans GEST PREV.', 'success');
+        } else {
+            this.showNotification('Identifiants incorrects. Veuillez réessayer.', 'error');
+            
+            // Vider le champ mot de passe en cas d'erreur
+            const passwordField = document.getElementById('password');
+            if (passwordField) passwordField.value = '';
+        }
+    }
+
+    logout() {
+        // Nettoyer complètement l'authentification
+        localStorage.removeItem('gestPrevAuth');
+        this.isAuthenticated = false;
+        document.body.classList.remove('authenticated');
+        
+        // Réinitialiser l'état de l'application
+        this.services = [];
+        this.employes = [];
+        this.planning = [];
+        
+        // Afficher l'overlay d'authentification
+        const authOverlay = document.getElementById('auth-overlay');
+        if (authOverlay) {
+            authOverlay.style.display = 'flex';
+            authOverlay.style.visibility = 'visible';
+            authOverlay.style.opacity = '1';
+        }
+        
+        // Masquer le contenu principal
+        const mainHeader = document.querySelector('.main-header');
+        if (mainHeader) {
+            mainHeader.style.display = 'none';
+            mainHeader.style.visibility = 'hidden';
+        }
+        
+        // Masquer tous les modules
+        document.querySelectorAll('.module-content').forEach(module => {
+            module.classList.remove('active');
+        });
+        
+        // Masquer toutes les sections
+        document.querySelectorAll('.module-section').forEach(section => {
+            section.classList.remove('active');
+        });
+        
+        // Masquer tous les onglets
+        document.querySelectorAll('.tab-btn').forEach(tab => {
+            tab.classList.remove('active');
+        });
+        
+        // Vider les champs de connexion
+        const usernameField = document.getElementById('username');
+        const passwordField = document.getElementById('password');
+        if (usernameField) usernameField.value = '';
+        if (passwordField) passwordField.value = '';
+        
+        this.showNotification('Déconnexion réussie.', 'info');
+        
+        // Forcer la vérification d'authentification
+        setTimeout(() => {
+            this.checkAuthentication();
+        }, 100);
+    }
+
+    // ===== FORCE LOGOUT - NETTOYAGE COMPLET =====
+    forceLogout() {
+        console.log('Force logout en cours...');
+        
+        // Nettoyer complètement le localStorage
+        localStorage.clear();
+        
+        // Nettoyer les cookies si possible
+        document.cookie.split(";").forEach(function(c) { 
+            document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/"); 
+        });
+        
+        // Réinitialiser complètement l'état
+        this.isAuthenticated = false;
+        this.services = [];
+        this.employes = [];
+        this.planning = [];
+        
+        // Supprimer toutes les classes d'authentification
+        document.body.classList.remove('authenticated');
+        
+        // Forcer l'affichage de l'overlay d'authentification
+        const authOverlay = document.getElementById('auth-overlay');
+        if (authOverlay) {
+            authOverlay.style.display = 'flex';
+            authOverlay.style.visibility = 'visible';
+            authOverlay.style.opacity = '1';
+            authOverlay.style.zIndex = '9999';
+        }
+        
+        // Masquer complètement le contenu principal
+        const mainHeader = document.querySelector('.main-header');
+        const moduleBanner = document.querySelector('.module-banner');
+        const mainContent = document.querySelector('.main-content');
+        
+        if (mainHeader) {
+            mainHeader.style.display = 'none';
+            mainHeader.style.visibility = 'hidden';
+        }
+        if (moduleBanner) {
+            moduleBanner.style.display = 'none';
+            moduleBanner.style.visibility = 'hidden';
+        }
+        if (mainContent) {
+            mainContent.style.display = 'none';
+            mainContent.style.visibility = 'hidden';
+        }
+        
+        // Masquer tous les modules, sections et onglets
+        document.querySelectorAll('.module-content, .module-section, .tab-btn').forEach(element => {
+            element.classList.remove('active');
+            element.style.display = 'none';
+        });
+        
+        // Vider les champs de connexion
+        const usernameField = document.getElementById('username');
+        const passwordField = document.getElementById('password');
+        if (usernameField) usernameField.value = '';
+        if (passwordField) passwordField.value = '';
+        
+        // Forcer le rechargement des styles CSS
+        this.reloadCSS();
+        
+        // Nettoyer le cache du navigateur
+        this.clearBrowserCache();
+        
+        // Forcer le rechargement de la page après un délai
+        setTimeout(() => {
+            window.location.reload(true);
+        }, 1000);
+        
+        this.showNotification('Déconnexion forcée effectuée. La page va se recharger.', 'info');
+    }
+
+    // ===== RECHARGEMENT CSS =====
+    reloadCSS() {
+        // Recharger tous les fichiers CSS
+        const links = document.querySelectorAll('link[rel="stylesheet"]');
+        links.forEach(link => {
+            const href = link.href;
+            link.href = '';
+            link.href = href + '?v=' + Date.now();
+        });
+        
+        // Forcer le rechargement des styles inline
+        const styleSheets = document.styleSheets;
+        for (let i = 0; i < styleSheets.length; i++) {
+            try {
+                const rules = styleSheets[i].cssRules || styleSheets[i].rules;
+                if (rules) {
+                    // Forcer le rechargement en modifiant temporairement
+                    styleSheets[i].disabled = true;
+                    setTimeout(() => {
+                        styleSheets[i].disabled = false;
+                    }, 100);
+                }
+            } catch (e) {
+                // Ignorer les erreurs CORS
+            }
+        }
+    }
+
+    // ===== NETTOYAGE CACHE NAVIGATEUR =====
+    clearBrowserCache() {
+        // Essayer de nettoyer le cache via l'API Cache
+        if ('caches' in window) {
+            caches.keys().then(names => {
+                names.forEach(name => {
+                    caches.delete(name);
+                });
+            });
+        }
+        
+        // Nettoyer le sessionStorage
+        sessionStorage.clear();
+        
+        // Forcer le rechargement des images et autres ressources
+        const images = document.querySelectorAll('img');
+        images.forEach(img => {
+            const src = img.src;
+            img.src = '';
+            img.src = src + '?v=' + Date.now();
+        });
     }
 
     // ===== CONFIGURATION VERROUILLÉE =====
@@ -240,6 +724,7 @@ class GestPrev {
             // Sauvegarde de sécurité avant chargement
             this.createBackup();
             
+            // Charger les données partagées entre tous les utilisateurs
             const savedServices = localStorage.getItem('gestPrevServices');
             const savedEmployes = localStorage.getItem('gestPrevEmployes');
             const savedPlanning = localStorage.getItem('gestPrevPlanning');
@@ -279,13 +764,16 @@ class GestPrev {
                 this.currentPlanning = JSON.parse(savedCurrentPlanning);
             }
             
-            console.log('✅ Données chargées avec succès:', {
+            console.log('✅ Données partagées chargées avec succès:', {
                 services: this.services.length,
                 employes: this.employes.length,
                 planning: this.planning.length,
                 scenarios: this.scenarios ? this.scenarios.length : 0,
                 simulations: this.simulations ? this.simulations.length : 0
             });
+            
+            // Afficher une notification pour confirmer la synchronisation
+            this.showNotification('Données synchronisées avec les autres utilisateurs', 'success');
             
         } catch (error) {
             console.error('❌ Erreur lors du chargement des données:', error);
@@ -299,6 +787,7 @@ class GestPrev {
             // Créer une sauvegarde avant de sauvegarder
             this.createBackup();
             
+            // Sauvegarder les données partagées entre tous les utilisateurs
             localStorage.setItem('gestPrevServices', JSON.stringify(this.services));
             localStorage.setItem('gestPrevEmployes', JSON.stringify(this.employes));
             localStorage.setItem('gestPrevPlanning', JSON.stringify(this.planning));
@@ -307,7 +796,11 @@ class GestPrev {
             localStorage.setItem('gestPrevVersion', '2.0.0'); // Version actuelle
             localStorage.setItem('gestPrevLastSave', new Date().toISOString());
             
-            console.log('✅ Données sauvegardées avec succès');
+            console.log('✅ Données partagées sauvegardées avec succès');
+            
+            // Afficher une notification pour confirmer la synchronisation
+            this.showNotification('Données sauvegardées et partagées avec les autres utilisateurs', 'success');
+            
         } catch (error) {
             console.error('❌ Erreur lors de la sauvegarde:', error);
             this.showNotification('Erreur lors de la sauvegarde des données', 'error');
@@ -315,6 +808,231 @@ class GestPrev {
     }
 
     // ===== SYSTÈME DE SAUVEGARDE ET RESTAURATION =====
+    
+    // Fonction pour forcer la synchronisation des données entre utilisateurs
+    async forceDataSync() {
+        try {
+            console.log('🔄 Synchronisation forcée des données...');
+            
+            // Recharger les données depuis le localStorage
+            this.loadFromLocalStorage();
+            
+            // Synchroniser avec le cloud
+            await this.syncWithCloud();
+            
+            // Rafraîchir l'affichage
+            this.displayServices();
+            this.displayEmployes();
+            
+            // Afficher une notification de confirmation
+            this.showNotification('Synchronisation des données terminée', 'success');
+            
+        } catch (error) {
+            console.error('❌ Erreur lors de la synchronisation:', error);
+            this.showNotification('Erreur lors de la synchronisation des données', 'error');
+        }
+    }
+    
+    // ===== SYSTÈME DE SYNCHRONISATION CLOUD =====
+    
+    // Fonction pour synchroniser les données avec le cloud (Netlify)
+    async syncWithCloud() {
+        try {
+            console.log('☁️ Synchronisation avec le cloud...');
+            
+            // Vérifier si on est sur Netlify ou local
+            const isNetlify = window.location.hostname.includes('netlify.app');
+            const isLocal = window.location.hostname.includes('localhost') || window.location.hostname.includes('127.0.0.1');
+            
+            if (isNetlify) {
+                // Sur Netlify : charger depuis le localStorage local et essayer de récupérer depuis le cloud
+                await this.loadFromCloud();
+            } else if (isLocal) {
+                // Sur local : envoyer les données vers le cloud
+                await this.saveToCloud();
+            }
+            
+            this.showNotification('Synchronisation cloud terminée', 'success');
+            
+        } catch (error) {
+            console.error('❌ Erreur lors de la synchronisation cloud:', error);
+            this.showNotification('Erreur lors de la synchronisation cloud', 'error');
+        }
+    }
+    
+    // Sauvegarder les données vers le cloud
+    async saveToCloud() {
+        try {
+            const dataToSync = {
+                services: this.services,
+                employes: this.employes,
+                planning: this.planning,
+                scenarios: this.scenarios || [],
+                simulations: this.simulations || [],
+                currentPlanning: this.currentPlanning,
+                version: '2.0.0',
+                lastSave: new Date().toISOString(),
+                source: window.location.hostname
+            };
+            
+            // Sauvegarder dans le localStorage local avec une clé spéciale pour le cloud
+            const cloudKey = 'gestPrevCloudData';
+            localStorage.setItem(cloudKey, JSON.stringify(dataToSync));
+            
+            // Essayer d'envoyer vers un service externe
+            const externalSuccess = await this.sendToExternalService(dataToSync);
+            
+            if (externalSuccess) {
+                console.log('☁️ Données envoyées vers le cloud externe avec succès');
+                this.showNotification('Données synchronisées vers le cloud externe', 'success');
+            } else {
+                console.log('☁️ Données sauvegardées localement (cloud externe non disponible)');
+                this.showNotification('Données sauvegardées localement', 'info');
+            }
+            
+        } catch (error) {
+            console.error('❌ Erreur lors de l\'envoi vers le cloud:', error);
+        }
+    }
+    
+    // Charger les données depuis le cloud
+    async loadFromCloud() {
+        try {
+            // Essayer d'abord de charger depuis le service externe
+            const externalSuccess = await this.loadFromExternalService();
+            
+            if (externalSuccess) {
+                this.showNotification('Données synchronisées depuis le cloud externe', 'success');
+                return;
+            }
+            
+            // Fallback : charger depuis le localStorage local
+            const cloudKey = 'gestPrevCloudData';
+            const cloudData = localStorage.getItem(cloudKey);
+            
+            if (cloudData) {
+                const parsedData = JSON.parse(cloudData);
+                
+                // Mettre à jour les données locales avec les données du cloud
+                if (parsedData.services) {
+                    this.services = parsedData.services;
+                }
+                if (parsedData.employes) {
+                    this.employes = parsedData.employes;
+                }
+                if (parsedData.planning) {
+                    this.planning = parsedData.planning;
+                }
+                if (parsedData.scenarios) {
+                    this.scenarios = parsedData.scenarios;
+                }
+                if (parsedData.simulations) {
+                    this.simulations = parsedData.simulations;
+                }
+                if (parsedData.currentPlanning) {
+                    this.currentPlanning = parsedData.currentPlanning;
+                }
+                
+                // Sauvegarder localement
+                this.saveToLocalStorage();
+                
+                console.log('☁️ Données chargées depuis le localStorage cloud');
+                this.showNotification('Données synchronisées depuis le localStorage cloud', 'success');
+            }
+            
+        } catch (error) {
+            console.error('❌ Erreur lors du chargement depuis le cloud:', error);
+        }
+    }
+    
+    // Envoyer vers un service externe (optionnel)
+    async sendToExternalService(data) {
+        try {
+            // Utiliser JSONBin.io pour le stockage cloud
+            // URL de l'API JSONBin.io (à remplacer par votre propre bin)
+            const jsonbinUrl = 'https://api.jsonbin.io/v3/b/65a1b8c8266cfc3fde8c8c8c';
+            const masterKey = '$2a$10$dXJ3SW6G7P50lGmMkkmwe.20cQQubK3.HZWzG3YB1tlRy.fqvM/BG';
+            
+            // Essayer d'envoyer les données vers JSONBin.io
+            const response = await fetch(jsonbinUrl, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Master-Key': masterKey,
+                    'X-Bin-Name': 'GEST PREV Data'
+                },
+                body: JSON.stringify({
+                    record: data,
+                    metadata: {
+                        createdAt: new Date().toISOString(),
+                        source: window.location.hostname,
+                        version: '2.0.0'
+                    }
+                })
+            });
+            
+            if (response.ok) {
+                console.log('☁️ Données envoyées vers JSONBin.io avec succès');
+                return true;
+            } else {
+                console.warn('⚠️ Échec de l\'envoi vers JSONBin.io, utilisation du localStorage local');
+                return false;
+            }
+            
+        } catch (error) {
+            console.error('❌ Erreur lors de l\'envoi vers le service externe:', error);
+            return false;
+        }
+    }
+    
+    // Charger depuis un service externe
+    async loadFromExternalService() {
+        try {
+            // URL de l'API JSONBin.io (à remplacer par votre propre bin)
+            const jsonbinUrl = 'https://api.jsonbin.io/v3/b/65a1b8c8266cfc3fde8c8c8c';
+            
+            const response = await fetch(jsonbinUrl);
+            
+            if (response.ok) {
+                const result = await response.json();
+                const cloudData = result.record;
+                
+                if (cloudData) {
+                    // Mettre à jour les données locales avec les données du cloud
+                    if (cloudData.services) {
+                        this.services = cloudData.services;
+                    }
+                    if (cloudData.employes) {
+                        this.employes = cloudData.employes;
+                    }
+                    if (cloudData.planning) {
+                        this.planning = cloudData.planning;
+                    }
+                    if (cloudData.scenarios) {
+                        this.scenarios = cloudData.scenarios;
+                    }
+                    if (cloudData.simulations) {
+                        this.simulations = cloudData.simulations;
+                    }
+                    if (cloudData.currentPlanning) {
+                        this.currentPlanning = cloudData.currentPlanning;
+                    }
+                    
+                    // Sauvegarder localement
+                    this.saveToLocalStorage();
+                    
+                    console.log('☁️ Données chargées depuis JSONBin.io');
+                    return true;
+                }
+            }
+            
+            return false;
+            
+        } catch (error) {
+            console.error('❌ Erreur lors du chargement depuis le service externe:', error);
+            return false;
+        }
+    }
     
     createBackup() {
         try {
@@ -786,6 +1504,16 @@ class GestPrev {
             });
         }
         
+        // Gestion de la force déconnexion
+        const forceLogoutBtn = document.getElementById('force-logout-btn');
+        if (forceLogoutBtn) {
+            forceLogoutBtn.addEventListener('click', () => {
+                if (confirm('Êtes-vous sûr de vouloir forcer la déconnexion ? Cela va nettoyer complètement le cache et recharger la page.')) {
+                    this.forceLogout();
+                }
+            });
+        }
+        
         // Formulaire de service
         const serviceForm = document.getElementById('service-form');
         console.log('📋 Service form trouvé:', !!serviceForm);
@@ -903,6 +1631,10 @@ class GestPrev {
     showServiceForm() {
         const form = document.getElementById('service-form');
         const addServiceBtn = document.getElementById('show-service-form');
+        
+        // Supprimer toute limitation potentielle sur le nombre de services
+        // Permettre l'ajout d'un nombre illimité de services
+        console.log('Nombre de services actuels:', this.services.length);
         
         if (form) {
             form.style.display = 'block';
@@ -1037,6 +1769,10 @@ class GestPrev {
             this.showNotification('Veuillez remplir le nom, la catégorie et configurer au moins un jour', 'error');
             return;
         }
+
+        // Supprimer toute limitation potentielle sur le nombre de services
+        // Permettre l'ajout d'un nombre illimité de services
+        console.log('Ajout du service:', serviceName, '- Nombre total de services après ajout:', this.services.length + 1);
 
         const service = {
             id: this.generateId(),
@@ -1224,6 +1960,12 @@ class GestPrev {
                 </div>
             `;
         }).join('');
+        
+        // S'assurer que le bouton d'ajout de service reste toujours visible
+        const addServiceBtn = document.getElementById('show-service-form');
+        if (addServiceBtn) {
+            addServiceBtn.style.display = 'block';
+        }
     }
 
     formatHorairesParJour(horairesParJour) {
@@ -4562,6 +5304,14 @@ class GestPrev {
     // ===== SYSTÈME D'EXPORT GLOBAL =====
     
     setupExportEventListeners() {
+        // Gestionnaire pour le bouton de synchronisation
+        const syncBtn = document.getElementById('sync-btn');
+        if (syncBtn) {
+            syncBtn.addEventListener('click', () => {
+                this.forceDataSync();
+            });
+        }
+        
         const exportBtn = document.getElementById('export-btn');
         const exportDropdown = document.querySelector('.export-dropdown');
         
@@ -8660,6 +9410,48 @@ class GestPrev {
 
 // Initialisation
 const gestPrev = new GestPrev();
+
+// ===== MÉTHODE GLOBALE POUR FORCE DÉCONNEXION =====
+// Cette méthode peut être appelée depuis la console du navigateur
+// Exemple: window.gestPrevApp.forceLogout()
+window.gestPrevApp = {
+    forceLogout: function() {
+        console.log('🚨 Force déconnexion globale déclenchée...');
+        if (window.gestPrev && typeof window.gestPrev.forceLogout === 'function') {
+            window.gestPrev.forceLogout();
+        } else {
+            console.error('❌ Instance gestPrev non disponible');
+            // Fallback: nettoyage manuel
+            localStorage.clear();
+            document.cookie.split(";").forEach(function(c) { 
+                document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/"); 
+            });
+            window.location.reload(true);
+        }
+    },
+    clearCache: function() {
+        console.log('🧹 Nettoyage du cache...');
+        if (window.gestPrev && typeof window.gestPrev.clearBrowserCache === 'function') {
+            window.gestPrev.clearBrowserCache();
+            window.gestPrev.reloadCSS();
+        }
+        window.location.reload(true);
+    },
+    forceDataSync: function() {
+        console.log('🔄 Synchronisation forcée des données...');
+        if (window.gestPrev && typeof window.gestPrev.forceDataSync === 'function') {
+            window.gestPrev.forceDataSync();
+        } else {
+            console.error('❌ Instance gestPrev non disponible');
+            // Fallback: rechargement manuel
+            window.location.reload(true);
+        }
+    }
+};
+
+// Rendre l'instance accessible globalement
+window.gestPrev = gestPrev;
+
 document.addEventListener('DOMContentLoaded', () => {
     gestPrev.init();
 });

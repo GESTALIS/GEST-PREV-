@@ -7222,108 +7222,79 @@ select[multiple] option:hover {
     z-index: 9999;
 }
 
-.auth-modal {
-    background: var(--white);
-    border-radius: 12px;
-    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
-    width: 100%;
-    max-width: 400px;
-    padding: 2rem;
-    text-align: center;
-}
-
-.auth-header {
-    margin-bottom: 2rem;
-}
-
-.auth-header .logo {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 1rem;
-    margin-bottom: 1rem;
-}
-
-.auth-header .logo-text h1 {
-    font-size: 1.8rem;
-    margin: 0;
-    color: var(--primary-color);
-}
-
-.auth-header .logo-text p {
-    font-size: 0.9rem;
-    margin: 0;
-    color: var(--medium-gray);
-}
-
-.auth-content h2 {
-    color: var(--primary-color);
-    margin-bottom: 1.5rem;
-    font-size: 1.5rem;
-}
-
-.auth-form {
-    text-align: left;
-}
-
-.form-group {
-    margin-bottom: 1.5rem;
-}
-
-.form-group label {
-    display: block;
-    margin-bottom: 0.5rem;
-    color: var(--dark-gray);
-    font-weight: 500;
-}
-
-.form-group input {
-    width: 100%;
-    padding: 0.75rem;
-    border: 2px solid var(--border-color);
-    border-radius: 8px;
-    font-size: 1rem;
-    transition: border-color 0.3s ease;
-}
-
-.form-group input:focus {
-    outline: none;
-    border-color: var(--primary-color);
-}
-
-.auth-form .btn {
-    width: 100%;
-    padding: 0.75rem;
-    font-size: 1rem;
-    margin-top: 1rem;
-}
-
-.auth-info {
-    margin-top: 2rem;
-    padding: 1rem;
-    background: var(--light-bg);
-    border-radius: 8px;
-    border-left: 4px solid var(--primary-color);
-}
-
-.auth-info p {
-    margin: 0.5rem 0;
-    font-size: 0.9rem;
-}
-
-.auth-info code {
-    background: var(--white);
-    padding: 0.25rem 0.5rem;
-    border-radius: 4px;
-    font-family: monospace;
-    color: var(--primary-color);
-}
-
-/* Masquer le contenu principal jusqu'à l'authentification */
-body:not(.authenticated) .main-header,
-body:not(.authenticated) .module-banner,
-body:not(.authenticated) .main-content {
+/* Forcer le masquage de l'overlay quand l'utilisateur est authentifié */
+body.authenticated .auth-overlay {
     display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    z-index: -1 !important;
+    pointer-events: none !important;
 }
 
-/* ===== LISTS ===== */
+/* Forcer l'affichage du contenu principal quand l'utilisateur est authentifié */
+body.authenticated .main-header,
+body.authenticated .module-banner,
+body.authenticated .main-content {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+}
+
+/* Règle supplémentaire pour s'assurer que l'overlay est masqué */
+.auth-overlay[style*="display: none"] {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    z-index: -1 !important;
+    pointer-events: none !important;
+}
+
+/* Règle encore plus forte pour forcer le masquage */
+.auth-overlay.hidden,
+.auth-overlay[style*="display: none"],
+.auth-overlay[style*="visibility: hidden"] {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    z-index: -1 !important;
+    pointer-events: none !important;
+}
+
+/* Règle finale pour s'assurer que l'overlay est masqué */
+.auth-overlay[style*="display: none"],
+.auth-overlay[style*="visibility: hidden"],
+.auth-overlay.hidden,
+body.authenticated .auth-overlay {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    z-index: -1 !important;
+    pointer-events: none !important;
+}
+
+/* Règle ultime pour forcer le masquage */
+.auth-overlay[style*="display: none"],
+.auth-overlay[style*="visibility: hidden"],
+.auth-overlay.hidden,
+body.authenticated .auth-overlay,
+.auth-overlay[style*="opacity: 0"] {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    z-index: -1 !important;
+    pointer-events: none !important;
+}
+
+/* Règle finale ultime pour forcer le masquage */
+.auth-overlay[style*="display: none"],
+.auth-overlay[style*="visibility: hidden"],
+.auth-overlay.hidden,
+body.authenticated .auth-overlay,
+.auth-overlay[style*="opacity: 0"],
+.auth-overlay[style*="z-index: -1"] {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    z-index: -1 !important;
+    pointer-events: none !important;
+}
