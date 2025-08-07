@@ -884,20 +884,14 @@ class GestPrev {
                            window.location.hostname.includes('127.0.0.1') ||
                            window.location.hostname.includes('file://');
             
-            if (isNetlify || isGitHubPages) {
-                // Sur Netlify/GitHub Pages : charger depuis le cloud
-                console.log('🌐 Environnement cloud détecté - Chargement depuis le cloud');
-                await this.loadFromCloud();
-            } else if (isLocal) {
-                // Sur local : envoyer vers le cloud
-                console.log('🏠 Environnement local détecté - Envoi vers le cloud');
-                await this.saveToCloud();
-            } else {
-                // Environnement inconnu : synchronisation bidirectionnelle
-                console.log('❓ Environnement inconnu - Synchronisation bidirectionnelle');
-                await this.loadFromCloud();
-                await this.saveToCloud();
-            }
+            // FORCER LA SYNCHRONISATION BIDIRECTIONNELLE POUR TOUS LES ENVIRONNEMENTS
+            console.log('🔄 Synchronisation bidirectionnelle forcée...');
+            
+            // 1. D'abord charger depuis le cloud
+            await this.loadFromCloud();
+            
+            // 2. Puis sauvegarder vers le cloud
+            await this.saveToCloud();
             
             this.showNotification('Synchronisation universelle terminée', 'success');
             
