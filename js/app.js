@@ -990,7 +990,7 @@ class GestPrev {
                 }
                 
                 // Sauvegarder localement
-                this.saveToLocalStorage();
+                this.saveToLocalStorage(); this.syncWithCloud().then(() => console.log(" Synchronisation cloud réussie\)).catch((error) => console.error(" Erreur synchronisation cloud:\, error));
                 
                 console.log('â˜ï¸ DonnÃ©es chargÃ©es depuis le localStorage cloud');
                 this.showNotification('DonnÃ©es synchronisÃ©es depuis le localStorage cloud', 'success');
@@ -1075,7 +1075,7 @@ class GestPrev {
                     }
                     
                     // Sauvegarder localement
-                    this.saveToLocalStorage();
+                    this.saveToLocalStorage(); this.syncWithCloud().then(() => console.log(" Synchronisation cloud réussie\)).catch((error) => console.error(" Erreur synchronisation cloud:\, error));
                     
                     console.log('â˜ï¸ DonnÃ©es chargÃ©es depuis JSONBin.io');
                     return true;
@@ -1212,7 +1212,7 @@ class GestPrev {
         
         if (hasChanges) {
             console.log('ðŸ”„ Services migrÃ©s vers le nouveau format');
-            this.saveToLocalStorage();
+            this.saveToLocalStorage(); this.syncWithCloud().then(() => console.log(" Synchronisation cloud réussie\)).catch((error) => console.error(" Erreur synchronisation cloud:\, error));
         }
     }
 
@@ -1252,7 +1252,7 @@ class GestPrev {
         
         if (hasChanges) {
             console.log('ðŸ”„ EmployÃ©s migrÃ©s vers le nouveau format');
-            this.saveToLocalStorage();
+            this.saveToLocalStorage(); this.syncWithCloud().then(() => console.log(" Synchronisation cloud réussie\)).catch((error) => console.error(" Erreur synchronisation cloud:\, error));
         }
     }
 
@@ -1519,7 +1519,7 @@ class GestPrev {
         ];
 
         // Sauvegarder les donnÃ©es de test
-        this.saveToLocalStorage();
+        this.saveToLocalStorage(); this.syncWithCloud().then(() => console.log(" Synchronisation cloud réussie\)).catch((error) => console.error(" Erreur synchronisation cloud:\, error));
     }
 
     // ===== FONCTION POUR FORCER LA CRÃ‰ATION DES DONNÃ‰ES DE TEST =====
@@ -1839,7 +1839,7 @@ class GestPrev {
         };
 
         this.services.push(service);
-        this.saveToLocalStorage();
+        this.saveToLocalStorage(); this.syncWithCloud().then(() => console.log(" Synchronisation cloud réussie\)).catch((error) => console.error(" Erreur synchronisation cloud:\, error));
         this.updateAllSelects();
         this.displayServices();
         this.hideServiceForm();
@@ -1849,7 +1849,7 @@ class GestPrev {
 
     deleteService(serviceId) {
         this.services = this.services.filter(service => service.id !== serviceId);
-        this.saveToLocalStorage();
+        this.saveToLocalStorage(); this.syncWithCloud().then(() => console.log(" Synchronisation cloud réussie\)).catch((error) => console.error(" Erreur synchronisation cloud:\, error));
         this.updateAllSelects();
         this.displayServices();
         this.showNotification('Service supprimÃ© avec succÃ¨s !', 'info');
@@ -1965,7 +1965,7 @@ class GestPrev {
                 updatedAt: new Date().toISOString()
             };
             
-            this.saveToLocalStorage();
+            this.saveToLocalStorage(); this.syncWithCloud().then(() => console.log(" Synchronisation cloud réussie\)).catch((error) => console.error(" Erreur synchronisation cloud:\, error));
             this.updateAllSelects();
             this.displayServices();
             this.hideServiceForm();
@@ -2219,7 +2219,7 @@ class GestPrev {
         }
 
         this.employes.push(employe);
-        this.saveToLocalStorage();
+        this.saveToLocalStorage(); this.syncWithCloud().then(() => console.log(" Synchronisation cloud réussie\)).catch((error) => console.error(" Erreur synchronisation cloud:\, error));
         this.updateAllSelects();
         this.displayEmployes();
         
@@ -2236,7 +2236,7 @@ class GestPrev {
 
     deleteEmploye(employeId) {
         this.employes = this.employes.filter(employe => employe.id !== employeId);
-        this.saveToLocalStorage();
+        this.saveToLocalStorage(); this.syncWithCloud().then(() => console.log(" Synchronisation cloud réussie\)).catch((error) => console.error(" Erreur synchronisation cloud:\, error));
         this.updateAllSelects();
         this.displayEmployes();
         this.showNotification('EmployÃ© supprimÃ© avec succÃ¨s !', 'info');
@@ -2376,7 +2376,7 @@ class GestPrev {
             return;
         }
 
-        this.saveToLocalStorage();
+        this.saveToLocalStorage(); this.syncWithCloud().then(() => console.log(" Synchronisation cloud réussie\)).catch((error) => console.error(" Erreur synchronisation cloud:\, error));
         this.updateAllSelects();
         this.displayEmployes();
         
@@ -3954,7 +3954,7 @@ class GestPrev {
         this.vacationPeriods = { ...this.vacationPeriods, ...scenario.config.vacationPeriods };
 
         // Sauvegarder et mettre Ã  jour l'affichage
-        this.saveToLocalStorage();
+        this.saveToLocalStorage(); this.syncWithCloud().then(() => console.log(" Synchronisation cloud réussie\)).catch((error) => console.error(" Erreur synchronisation cloud:\, error));
         this.displayServices();
         this.displayEmployes();
         this.updateAllSelects();
@@ -4087,7 +4087,7 @@ class GestPrev {
         const employe = this.employes.find(e => e.id === employeId);
         if (employe) {
             employe.modeGestion = mode;
-            this.saveToLocalStorage();
+            this.saveToLocalStorage(); this.syncWithCloud().then(() => console.log(" Synchronisation cloud réussie\)).catch((error) => console.error(" Erreur synchronisation cloud:\, error));
             this.showNotification(`Mode ${mode} activÃ© pour ${employe.prenom} ${employe.nom}`, 'info');
         }
     }
@@ -9278,7 +9278,7 @@ class GestPrev {
                     }
                     
                     // Sauvegarder les donnÃ©es importÃ©es
-                    this.saveToLocalStorage();
+                    this.saveToLocalStorage(); this.syncWithCloud().then(() => console.log(" Synchronisation cloud réussie\)).catch((error) => console.error(" Erreur synchronisation cloud:\, error));
                     
                     // Recharger l'interface
                     this.displayServices();
@@ -9393,7 +9393,7 @@ class GestPrev {
                     localStorage.setItem('currentPlanning', backupData.currentPlanning);
                 }
                 
-                this.saveToLocalStorage();
+                this.saveToLocalStorage(); this.syncWithCloud().then(() => console.log(" Synchronisation cloud réussie\)).catch((error) => console.error(" Erreur synchronisation cloud:\, error));
                 
                 // Recharger l'interface
                 this.displayServices();
